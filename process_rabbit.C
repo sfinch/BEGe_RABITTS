@@ -8,13 +8,18 @@
 #include <TCanvas.h>
 #include <TRandom3.h>
 
+#include "RabVar.h"
 #include "include/MDPP16_SCP.h"
+#include "include/MDPP16_QDC.h"
+
+using namespace RabVar;
 
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::ifstream;
 using std::vector;
+
 
 struct calibration{     //struct storing calibration data for both dets
     Float_t m[6];
@@ -33,18 +38,8 @@ int main(int argc, char *argv[]){
     }
     int run_num = atoi(argv[1]);
 
-    //Variables
-    const int num_det = 6;
-    int det_chn[num_det] = {0, 2, 4, 5, 6, 7};
-    const int rabbit_chn = 12;
-
-    bool opt_verbose = 0;
-
     //cycle time variables
     bool source_run = 1;
-    double min_time = 0.2;  //filter for duplicate in sec
-    double max_var = 1.1;   //filter for missed signals
-    double min_var = 0.9;   //filter for extra signals
     int pos = 0;            //-1 = counting, 0 not def, 1 = irradiation
 
     double last_move = 0;
@@ -66,28 +61,33 @@ int main(int argc, char *argv[]){
 
     //in file
     MDPP16_SCP rabbit(run_num);
+    MDPP16_QDC rabbit_QDC(run_num);
     //check for any additional calibration corrections
     calibration cal = read_in_cal(run_num);
 
     //output tree variables
     Float_t cycle_time = 0;
+    Float_t nmon_PSD;
     Float_t En[num_det];
     TRandom3 r;
 
     //out file
     TFile *fOut = new TFile(Form("data_processed/RABITTS_%i.root", run_num), "RECREATE");
     TTree *tProcessed = new TTree("processed", "Processed rabbit data");
+    TTree *tProcessed_QDC = new TTree("processed_QDC", "Processed rabbit QDC data");
 
     tProcessed->Branch(Form("En[%i]", num_det), &En, Form("En[%i]/F", num_det));
     tProcessed->Branch("cycle_time", &cycle_time, "cycle_time/F");
+
+    tProcessed_QDC->Branch("cycle_time", &cycle_time, "cycle_time/F");
+    tProcessed_QDC->Branch(Form("nmon_PSD"), &nmon_PSD, Form("nmon_PSD/F"));
 
     //Histrograms
     TH1F *hIrrTime = new TH1F("hIrrTime", "hIrrTime", 100*100, 0, 100);
     TH1F *hCountTime = new TH1F("hCountTime", "hCountTime", 100*100, 0, 100);
     TH1F *hCycleTime = new TH1F("hCycleTime", "hCycleTime", 10*110, -10, 100);
-
+    TH1F *hNmon_PSD = new TH1F("hNmon_PSD", "hNmon_PSD", 2500, -5, 5);
     TH1F *hEn[num_det];
-
     for (int det=0; det<num_det; det++){
         hEn[det] = new TH1F(Form("hEn%i", det), Form("hEn%i", det), 10*3000, 0, 3000);
     }
@@ -101,12 +101,12 @@ int main(int argc, char *argv[]){
 
     //loop over data
     Long64_t nentries = rabbit.fChain->GetEntriesFast();
+    Long64_t nentries_QDC = rabbit_QDC.fChain->GetEntriesFast();
     Long64_t nbytes = 0, nb = 0;
     
     //find start offset
     if (!(source_run)){
-        for (Long64_t jentry=0; jentry<nentries;jentry++) {
-            rabbit.GetEntry(jentry);
+        for (Long64_t jentry=0; jentry<nentries;jentry++) { rabbit.GetEntry(jentry);
             if (rabbit.ADC[rabbit_chn]>10){
                 start_offset = rabbit.seconds; 
                 start_event = jentry-1; 
@@ -132,7 +132,11 @@ int main(int argc, char *argv[]){
     cout << rabbit.seconds-end_offset << " seconds data after RABITT turned off." << endl;
 
     //Find all movements
-    if (!(source_run)){
+    cout << "Finding all motor movements..." << endl;
+    if (source_run){
+        cout << "...No motor movements: this was as source or overnight run!" << endl;
+    }
+    else if (!(source_run)){
         for (Long64_t jentry=start_event; jentry<end_event; jentry++) {
             nb = rabbit.GetEntry(jentry);   nbytes += nb;
             if (jentry%100000==0){
@@ -282,10 +286,11 @@ int main(int argc, char *argv[]){
             }//end else
 
         }//end loop over events
+        cout << endl;
     }//end !source run
-    cout << endl;
 
     //loop over all events and write output tree
+    cout << "Processing MDPP16 SCP..." << endl;
     for (Long64_t jentry=0; jentry<nentries; jentry++) {
         nb = rabbit.GetEntry(jentry);   nbytes += nb;
         if (jentry%100000==0){
@@ -302,7 +307,6 @@ int main(int argc, char *argv[]){
                 cycle_time = rabbit.seconds - start_offset;
             }
             else{
-                //for (int i=0; i<irr_start.size(); i++){
                 for (auto & cycle_start : irr_start){
                     if (rabbit.seconds > cycle_start){
                         cycle_time = rabbit.seconds - cycle_start;
@@ -316,8 +320,9 @@ int main(int argc, char *argv[]){
             En[det] = 0;
             if ((rabbit.ADC[det_chn[det]]>10)&&(!(rabbit.overflow[det_chn[det]]))){
                 //Calibrate
-                En[det] = (rabbit.ADC[det_chn[det]]+r.Rndm()-0.5)*( (*rabbit.m) )[det_chn[det]] + ( (*rabbit.b) )[det_chn[det]];
-                En[det_chn[det]] = En[det_chn[det]]*cal.m[det_chn[det]] + cal.b[det_chn[det]];
+                En[det] = (rabbit.ADC[det_chn[det]]+r.Rndm()-0.5)*( (*rabbit.m) )[det] + ( (*rabbit.b) )[det];
+                En[det] = int(100*(En[det]*cal.m[det] + cal.b[det]));
+                En[det] = En[det]/100.;
                 //fill histos
                 hEn[det]->Fill(En[det]);
                 hCycleTime->Fill(cycle_time);
@@ -328,22 +333,67 @@ int main(int argc, char *argv[]){
         tProcessed->Fill();
     }
     cout << endl;
+    cout << nentries << " SCP events processed" << endl;
 
-    cout << nentries << " events processed" << endl;
+    //loop over all QDC events and write output tree
+    cout << "Processing MDPP16 QDC..." << endl;
+    for (Long64_t jentry=0; jentry<nentries_QDC; jentry++) {
+        nb = rabbit_QDC.GetEntry(jentry);
+        if (jentry%100000==0){
+            if (!opt_verbose){
+                cout << '\r' << "Processing event " << jentry;
+            }
+        }
+
+        cycle_time = 0;
+
+        if (!source_run){
+            if (jentry<start_event){
+                //cycle time should be negative
+                cycle_time = rabbit_QDC.seconds - start_offset;
+            }
+            else{
+                for (auto & cycle_start : irr_start){
+                    if (rabbit_QDC.seconds > cycle_start){
+                        cycle_time = rabbit_QDC.seconds - cycle_start;
+                    }
+                }
+            }
+        }
+
+        //Calculated values (PSD)
+        nmon_PSD = 0;
+        if ((rabbit_QDC.ADC_long[nmon_chn]>1)&&(!(rabbit_QDC.overflow[nmon_chn]))){
+            nmon_PSD = int((r.Rndm() + rabbit_QDC.ADC_long[nmon_chn] - rabbit_QDC.ADC_short[nmon_chn])
+                       *100./(r.Rndm() + rabbit_QDC.ADC_long[nmon_chn]));
+            nmon_PSD = nmon_PSD/100.;
+            hNmon_PSD->Fill(nmon_PSD);
+        }
+
+        //fill tree
+        tProcessed_QDC->Fill();
+    }
+    cout << endl;
+    cout << nentries_QDC << " QDC events processed" << endl;
+
+    cout << "---------------------------------" << endl;
     cout << "Counting cycles:           " << num_count << endl;
     cout << "Irradiation cycles:        " << num_irr << endl;
     cout << "Counting cycles missed:    " << num_missed_count << endl;
     cout << "Irradiation cycles missed: " << num_missed_irr  << endl;
+    cout << "---------------------------------" << endl;
     
     //write data to file
     fOut->cd();
     tProcessed->Write();
+    tProcessed_QDC->Write();
 
     fOut->mkdir("histos");
     fOut->cd("histos");
     hIrrTime->Write();
     hCountTime->Write();
     hCycleTime->Write();
+    hNmon_PSD->Write();
     for (int det=0; det<num_det; det++){
         hEn[det]->Write();
     }

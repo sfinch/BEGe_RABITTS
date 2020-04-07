@@ -12,22 +12,18 @@ using namespace std;
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TLine.h"
-#include "TRandom3.h"
 #include "TFile.h"
-#include "TCut.h"
+
+#include "RabVar.h"
+using namespace RabVar;
 
 void plot_FC(int run_num){
 
+    gStyle->SetOptStat(0);
 
     //Variables
-    const int num_det = 2;
-    const int rebin = 1;
-    int dets[num_det] = {10, 11};
-    int threshold[num_det] = {7000, 7000};
-    TLine *l[num_det];
-    
-    //Histograms
-    TH1F *hFC[num_det];
+    TH1F *hFC[num_FC];
+    TLine *l[num_FC];
 
     //get histos
     TFile *fHist;
@@ -41,24 +37,28 @@ void plot_FC(int run_num){
         fHist = new TFile(Form("data_root/RABITTS_%i.root", run_num));
     }
 
-    TCanvas *cFC = new TCanvas("cFC","Summed segments",1000, 400);
-    cFC->Divide(num_det);
+    TCanvas *cFC = new TCanvas("cFC","Fisson chamber energy spectra", 800, 800);
+    cFC->Divide(1, num_FC);
 
-    for (int j=0; j<num_det; j++){
+    for (int j=0; j<num_FC; j++){
         cFC->cd(j+1);
 
-        hFC[j] = (TH1F*) (fHist->Get(Form("histos_SCP/hADC%i", dets[j])))->Clone();
-        hFC[j]->SetName(Form("run%i_Det%i", run_num, j+1));
-        cout << hFC[j]->Integral(threshold[j], 65535) << endl;
-        hFC[j]->Rebin(16);
-        hFC[j]->GetXaxis()->SetRangeUser(5000, 65535);
+        hFC[j] = (TH1F*) (fHist->Get(Form("histos_SCP/hADC%i", FC_chn[j])))->Clone();
+        hFC[j]->SetTitle(Form("Run %i, FC%i", run_num, j+1));
+        cout << "FC" << j+1 << " counts: " << hFC[j]->Integral(FC_threshold[j], 65535) << endl;
+
+        hFC[j]->Rebin(FC_rebin);
+        hFC[j]->GetXaxis()->SetRangeUser(2000, 65535);
+        hFC[j]->GetYaxis()->SetTitle("Counts");
+        hFC[j]->GetXaxis()->SetTitle("ADC channel");
         hFC[j]->Draw();
 
-        l[j] = new TLine(threshold[j], 0, threshold[j], hFC[j]->GetMaximum());
+        l[j] = new TLine(FC_threshold[j], 0, FC_threshold[j], hFC[j]->GetMaximum());
         l[j]->SetLineColor(2);
         l[j]->SetLineWidth(2);
         l[j]->SetLineStyle(2);
         l[j]->Draw("same");
+
     }
 
 

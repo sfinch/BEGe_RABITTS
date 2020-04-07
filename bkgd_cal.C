@@ -3,7 +3,7 @@
 //  Finds the chn number corresponding to the centriod of n peaks,      //
 //  then finds a linear calibration from channel to energy              //
 //  which is saved in a text file                                       //
-//      datafiles/clover_cal.dat                                        //
+//      datafiles/det_cal.dat                                           //
 //  Does this for all detectors.                                        //
 //////////////////////////////////////////////////////////////////////////
 
@@ -19,8 +19,9 @@ void bkgd_cal(int run_num = 0){
     }
     cout << "Run Number " << run_num << endl;
 
-    //variables
+    //number of detectors we are calibrating
     const int num_det = 6;
+    //channel numbers of detectors
     int det_chn[num_det] = {0, 2, 4, 5, 6, 7};
 
     std::vector<double> energy;
@@ -31,14 +32,12 @@ void bkgd_cal(int run_num = 0){
     // Set initial ranges for each fit. Will fit the largest ADC peak in the region and
     // calibrate it to the corresponding energy
     //185
-    /*
     energy.push_back(185.72);
     energy_error.push_back(0.02);
     for (int i=0; i<num_det; i++){
         startrange[i].push_back(175);
         endrange[i].push_back(195);
     }
-    */
 
     //351
     energy.push_back(351.92);
@@ -75,14 +74,12 @@ void bkgd_cal(int run_num = 0){
     }
 
     //1120
-    /*
     energy.push_back(1120.4);
     energy_error.push_back(0.10);
     for (int i=0; i<num_det; i++){
         startrange[i].push_back(1105);
         endrange[i].push_back(1130);
     }
-    */
 
     //1461
     energy.push_back(1460.822);
@@ -100,7 +97,6 @@ void bkgd_cal(int run_num = 0){
         endrange[i].push_back(1775);
     }
 
-    /*
     //2204
     energy.push_back(2204.059);
     energy_error.push_back(0.022);
@@ -116,9 +112,9 @@ void bkgd_cal(int run_num = 0){
         startrange[i].push_back(2590);
         endrange[i].push_back(2630);
     }
-    */
 
 
+    //variables
     const int num_points = energy.size();
     double centroid[num_det][num_points];
     double centroid_error[num_det][num_points];
@@ -278,7 +274,7 @@ void bkgd_cal(int run_num = 0){
     cin >> ans;
     if (ans == 'y'){    //write calibration to file
         FILE *file_ptr;
-        file_ptr = fopen("datafiles/clover_cal.dat","a");
+        file_ptr = fopen("datafiles/det_cal.dat","a");
         fprintf(file_ptr, "%i", run_num);
         for (int i=0; i<num_det; i++){
             fprintf(file_ptr,"\t%f", m[i]); 
