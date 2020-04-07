@@ -4,3 +4,25 @@ March 31, 2020
 
 Analysis code for RABITTS using BEGe detectors
 
+Data structure:
+  data_mvmelst
+    Raw data files from MVME DAQ system
+  data_root
+    Data converted from MVME listfiles to ROOT trees using mvme2root
+    (https://github.com/sfinch/mvme2root)
+  data_processed
+    Root trees processed using process_rabbit.C. Containing branches for cycle time, energy
+    calibrated detector data.
+  data_hist
+    ROOT histograms containing analyzed data from analysis_overnight.C and analysis_cycle.C
+  data_TKA
+    Histograms that are output to ASCII/TKA format are stored here
+  datafiles
+    Text files from bkgd_cal.C and run_info.C are stored here.
+  time_spec
+    Cycle time spectra are stored here in png and C format. 
+
+Shell scripts for batch processing:
+    multi_process.sh
+    multi_analysis.sh
+

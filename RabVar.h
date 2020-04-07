@@ -2,7 +2,6 @@
 #define RabVar_h 1
 
 namespace RabVar{
-
     
     /*
     //analysis_cycle variables
@@ -25,29 +24,16 @@ namespace RabVar{
         time_win[i][0] = (time_bin*i)+time_count[0];
         time_win[i][1] = (time_bin*(i+1))+time_count[0];
     }
-    
-    //analysis_overnight
-    const int num_det = 2;
-
-    const int num_win = 16;
-    const double win_time =3600; //in sec
+    */
     
     //run_info
-    const int num_det = 2;
-    int FC_chn[num_det] = {10, 11};
-    int nE_chn= 8;
-    int nPSD_chn = 9;
-    int BCI_chn = 14;
-
-    double time_irr[2] = {0.0, 10.0};
-
-    const int num_lines = 2;
-    double lx[num_lines] = {6000, 66000}; //the range for the integration
-    */
-    //
+    double time_irr[2] = {0.9, 11.1};
     
+    //analysis_overnight
+    const int num_overnight_win = 16;
+    const double overnight_win_time =3600; //in sec
 
-    //Process rabbit Variables
+    //Process rabbit variables
     const int num_det = 6;
     int det_chn[num_det] = {0, 2, 4, 5, 6, 7};
     const int rabbit_chn = 12;
