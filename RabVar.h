@@ -3,31 +3,19 @@
 
 namespace RabVar{
     
-    /*
     //analysis_cycle variables
-    const int num_det = 2;
-
     const int num_win = 10;
     double irr_time = 10;
     double count_time = 20;
     double transit_time = 1.05;
     
-    const int rebin = 1;
+    const int energy_rebin = 1;
     
-    //cuts
+    //calculated values
     double time_bin = count_time/num_win;
     double time_irr[2] = {transit_time, irr_time+transit_time};
     double time_count[2] = {irr_time + 2*transit_time, 
                             irr_time + 2*transit_time + count_time};
-    double time_win[num_win][2];
-    for (int i=0; i<num_win; i++){
-        time_win[i][0] = (time_bin*i)+time_count[0];
-        time_win[i][1] = (time_bin*(i+1))+time_count[0];
-    }
-    */
-    
-    //run_info
-    double time_irr[2] = {0.9, 11.1};
     
     //analysis_overnight
     const int num_overnight_win = 16;
