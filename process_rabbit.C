@@ -22,21 +22,55 @@ using std::vector;
 
 
 struct calibration{     //struct storing calibration data for both dets
-    Float_t m[6];
-    Float_t b[6];
+    Float_t m[num_det];
+    Float_t b[num_det];
 };
     
 calibration read_in_cal(int run_num); // function to read in calibration from file
+int process_rabbit(int run_num, bool opt_verbose);
 
 int main(int argc, char *argv[]){
+
+    bool optverbose = 0;
+    int startindex = 1;
+    int num_errors = 0;
 
     if (argc<2)
     {
         cerr << "Invalid number of arguments" << endl;
-        cerr << "Usage: " << argv[0] << " <run number>" << endl;
+        cerr << "Usage: " << argv[0] << " [-v] <run numbers>" << endl;
         return 1;
     }
-    int run_num = atoi(argv[1]);
+    
+    if (!strcmp(argv[1], "-v")) //verbose option
+    {
+        optverbose = 1;
+        startindex++;
+    }
+
+    //loop over all given files
+    for (int file=startindex; file<argc; file++){
+        cout << "----- Processing run number " << argv[file] << " -----" << endl;
+
+        //process mvmelst file
+        try
+        {
+            process_rabbit(atoi(argv[file]), optverbose);
+        }
+        catch (const std::exception &e)
+        {
+            cerr << "Error processing run: " << e.what() << endl;
+            num_errors++;
+        }
+
+        cout << "----- Run " << argv[file] << " complete -----" << endl;
+    }
+    cout << "----- " << argc-startindex-num_errors << "/" << argc-startindex << " files converted -----" << endl;
+
+    return 0;
+}
+
+int process_rabbit(int run_num, bool opt_verbose){
 
     //cycle time variables
     bool source_run = 1;
@@ -399,6 +433,7 @@ int main(int argc, char *argv[]){
     }
 
     fOut->Close();
+    return 0;
     
 }
 
@@ -406,7 +441,6 @@ int main(int argc, char *argv[]){
 calibration read_in_cal(int run_num){
 
     //variables to read in from file
-    const int num_det = 6;
     Float_t m_file[num_det], b_file[num_det];
     int run, run2;
     

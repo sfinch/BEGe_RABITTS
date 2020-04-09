@@ -6,7 +6,7 @@ namespace RabVar{
     //analysis_cycle variables
     const int num_win = 10;
     double irr_time = 10;
-    double count_time = 20;
+    double count_time = 60;
     double transit_time = 1.05;
     
     const int energy_rebin = 1;
@@ -25,7 +25,6 @@ namespace RabVar{
     const int num_det = 6;
     int det_chn[num_det] = {0, 2, 4, 5, 6, 7};
     const int rabbit_chn = 12;
-    bool opt_verbose = 0;
 
     //cycle time variables
     double min_time = 0.2;  //filter for duplicate in sec

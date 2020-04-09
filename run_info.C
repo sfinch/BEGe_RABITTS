@@ -54,6 +54,12 @@ void run_info(int run_num){
     TH1F *hBCI_irr = new TH1F("hBCI_irr", "hBCI_irr", 16*4096, 0, 16*4096);
     TH1F *hNmon_E_irr = new TH1F("hNmon_E_irr", "hNmon_E_irr", 16*4096, 0, 16*4096);
     TH1F *hNmon_PSD_irr = new TH1F("hNmon_PSD_irr", "hNmon_PSD_irr", 16*4096, 0, 16*4096);
+    for (int i=0; i<num_FC; i++){
+        hFC[i] = new TH1F(Form("hFC%i",i), Form("FC %i",i+1), 
+            16*4096, 0, 16*4096);
+        hFC_irr[i] = new TH1F(Form("hFC_irr%i",i), Form("FC_irr %i",i+1), 
+            16*4096, 0, 16*4096);
+    }
     
     //in file
     processed rabbit(run_num);
@@ -65,14 +71,6 @@ void run_info(int run_num){
     
     //lines
     TLine *line[num_FC];
-
-    //Histos
-    for (int i=0; i<num_FC; i++){
-        hFC[i] = new TH1F(Form("hFC%i",i), Form("FC %i",i+1), 
-            16*4096, 0, 16*4096);
-        hFC_irr[i] = new TH1F(Form("hFC_irr%i",i), Form("FC_irr %i",i+1), 
-            16*4096, 0, 16*4096);
-    }
 
     cout << rabbit.rawfile->Get("start_time")->GetTitle() << endl;
     cout << rabbit.rawfile->Get("stop_time")->GetTitle() << endl;

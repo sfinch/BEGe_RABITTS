@@ -9,6 +9,9 @@
 
 
 #include <vector>
+#include "RabVar.h"
+
+using namespace RabVar;
 
 void bkgd_cal(int run_num = 0){
 
@@ -18,11 +21,6 @@ void bkgd_cal(int run_num = 0){
         cin >> run_num;
     }
     cout << "Run Number " << run_num << endl;
-
-    //number of detectors we are calibrating
-    const int num_det = 6;
-    //channel numbers of detectors
-    int det_chn[num_det] = {0, 2, 4, 5, 6, 7};
 
     std::vector<double> energy;
     std::vector<double> energy_error;
@@ -259,10 +257,14 @@ void bkgd_cal(int run_num = 0){
 
     }
 
-    for (int j=0; j<2; j++){
+    for (int j=0; j<num_det; j++){
+        cout << "------------------------------------------------------------" << endl;
+        cout << "                    Detector " << j+1 << endl;
+        cout << "------------------------------------------------------------" << endl;
+        cout << "En [kev] \tCentroid \tFWHM\t\tFWHM uncert" << endl;
         for (int i=0; i<num_points; i++){
-            cout << energy[i] << "\t" << centroid[j][i] << "\t" 
-                 << FWHM[j][i] << "\t" << FWHM_error[j][i] << endl;
+            cout << energy[i] << "\t\t" << centroid[j][i] << "\t\t" 
+                 << FWHM[j][i] << "\t\t" << FWHM_error[j][i] << endl;
         }
     }
     
@@ -270,6 +272,7 @@ void bkgd_cal(int run_num = 0){
 
     // check calibration with user
     char ans = 'n';
+    cout << endl;
     cout << "Accept this calibration (y/n)?  ";
     cin >> ans;
     if (ans == 'y'){    //write calibration to file
