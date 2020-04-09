@@ -3,6 +3,9 @@
 // Wed Feb  6 13:16:29 2019 by ROOT version 5.34/38
 // from TTree processed/Processed rabbit data
 // found on file: data_processed/RABBIT_DEC18_12.root
+// Then heavily modified by S. Finch
+// Class for SCP processed data from processed_rabbit. 
+// Includes raw MDPP16_SCP data as a friend tree
 //////////////////////////////////////////////////////////
 
 #include <TROOT.h>

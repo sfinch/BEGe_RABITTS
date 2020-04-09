@@ -1,3 +1,15 @@
+///////////////////////////////////////////////////////////////////////////
+// plot_nmon.C
+// Plots the detector count rate as a function of cycle time for the BCI, neutron monitor
+// with and without PSD cut, the two fission chambers, and the two BEGe detectors. 
+// The spectra are saved in time_spectra for quick reference
+// The channel numbers, thresholds, and PSD cuts are all stores in RabVar.C
+// Requries running of mvme2root, followed by process_rabbit
+//
+// To run: root -l "plot_nmon.C(XXX)" where XXX is run number
+//
+//////////////////////////////////////////////////////////////////////////
+
 
 #include <iostream>
 

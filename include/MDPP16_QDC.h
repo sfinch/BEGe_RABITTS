@@ -3,6 +3,8 @@
 // Wed Jan 30 13:46:18 2019 by ROOT version 5.34/38
 // from TTree MDPP16_SCP/MDPP16 data
 // found on file: data_root/RABBIT_DEC18_010.root
+// Then heavily modified by S. Finch
+// Class for raw data from MDPP16_QDC tree, produced by mvme2root
 //////////////////////////////////////////////////////////
 
 #include <TROOT.h>

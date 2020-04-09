@@ -1,10 +1,12 @@
-///////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 //  bkgd_cal.C                                                          //
 //  Finds the chn number corresponding to the centriod of n peaks,      //
 //  then finds a linear calibration from channel to energy              //
 //  which is saved in a text file                                       //
 //      datafiles/det_cal.dat                                           //
 //  Does this for all detectors.                                        //
+//  To run: root -l "bkgd_cal.C(XXX)" where  XXX is the run number      //
+//  Requires that data has been converted to ROOT using mvme2root       //
 //////////////////////////////////////////////////////////////////////////
 
 

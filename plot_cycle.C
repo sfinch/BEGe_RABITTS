@@ -1,3 +1,17 @@
+///////////////////////////////////////////////////////////////////////////
+// plot_cycle.C
+// For plotting analyzed RABITTS runs: After running analysis_cycle.C, you can run this
+// script to plot the histograms and output the spectra to TKA. 
+// The time divisions may be changed in RabVar.h
+// Requries running of mvme2root, followed by process_rabbit, followed by analysis_cycle.C
+//
+// To run: root -l "plot_cycle.C(XXX, YYY)" will plot the added energy spectra for all
+// runs from XXX to YYY, inclusive. "plot_cycle.C(XXX)" may be used to look at one
+// individual run. Overnight and source runs will not contribute the the cycle spectra, so
+// you can include these runs in the inclusive run range without any effect. 
+// 
+//
+///////////////////////////////////////////////////////////////////////////
 
 using namespace std;
 #include <stdlib.h>

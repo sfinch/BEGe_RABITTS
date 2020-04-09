@@ -1,3 +1,13 @@
+///////////////////////////////////////////////////////////////////////////
+// plot_FC.C
+// Plots the histograms for the two fission chambers, and integrats the number of fission
+// events above threshold. The values for these cuts are defined in RabVar.h
+// Only requires raw data has been converted to ROOT using mvme2root
+//
+// To run: root -l "beam_corr.C(XXX)" where XXX is run number
+//
+//////////////////////////////////////////////////////////////////////////
+
 
 using namespace std;
 #include <stdlib.h>

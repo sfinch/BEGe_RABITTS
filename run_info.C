@@ -1,7 +1,13 @@
-// plot.C
-// Plots histograms for all detectors
-// To run: root -l "plot.C(XXX)" where XXX is run number
-// or: root -l "plot.C(XXX, YYY)" sums all runs from XXX to YYY
+///////////////////////////////////////////////////////////////////////////
+// run_info.C
+// Calculates a summary of the run and saves it to the tab-separated values (TSV) file:
+// datafiles/run_info.dat
+// Requries running of mvme2root, followed by process_rabbit
+// Also depends on timing and PSD cuts in RabVar.h
+//
+// To run: root -l "plot_nmon.C(XXX)" where XXX is run number
+//
+///////////////////////////////////////////////////////////////////////////
 
 using namespace std;
 #include <stdlib.h>

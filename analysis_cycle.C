@@ -1,3 +1,16 @@
+///////////////////////////////////////////////////////////////////////////
+// analysis_cycle.C
+// For analyzing RABITTS runs: Projects BEGe energy spectra for the irradiation time,
+// counting time, and sub-divides the counting time into different time divisions. 
+// The time divisions may be changed in RabVar.h
+// ROOT histograms are saved in data_root. After ananlysis_cycle.C has been run, you may
+// use plot_cycle.C to plot the spectra and output the spectra to TKA files
+// Requries running of mvme2root, followed by process_rabbit
+//
+// To run: root -l "analysis_cycle.C(XXX)" where XXX is run number
+// 
+//
+///////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
 

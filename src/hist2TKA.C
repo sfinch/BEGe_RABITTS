@@ -1,3 +1,7 @@
+// Quick function for outputing an ROOT TH1F as a TKA file. 
+// TKA file is saved in the sub-directory data_TKA
+// Uses the TH1F name as the TKA filename
+
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>

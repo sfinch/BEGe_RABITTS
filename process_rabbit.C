@@ -1,3 +1,15 @@
+///////////////////////////////////////////////////////////////////////////
+// process_rabbit
+// Reads in the MDPP16_SCP and MDPP_QDC trees from mvme2root, then outputs a processed
+// tree with branches for energy calibrated HPGe detecors, cycle time, and neutron PSD. 
+// output ROOT files saved in data_processed
+// Experimental configuration set in RabVar.h
+// Requries running of mvme2root. 
+//
+// To run: first make, then
+// ./process_rabbit [-v] <run numbers>
+//
+///////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
 #include <fstream>
