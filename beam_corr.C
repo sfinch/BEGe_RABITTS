@@ -70,7 +70,7 @@ void beam_corr(int run_num){
             cout << '\r' << "Processing event " << jentry;
         }
 
-        if (rabbit.ADC[BCI_chn] >10){
+        if (rabbit.ADC[BCI_chn] >min_BCI){
             corr_BCI.corr += exp(-1*lambda*rabbit.seconds);
             corr_BCI.num_events++;
             if ((rabbit.cycle_time>time_irr[0])
