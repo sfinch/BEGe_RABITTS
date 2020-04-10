@@ -1,3 +1,14 @@
+
+///////////////////////////////////////////////////////////////////////////
+// RabVar.h
+// All variables for the runs are set here. This includes all the number of detectors,
+// detector channel numbers, timing cuts, PSD cuts, FC thresholds, and histogram ranges. 
+// If you make changes here, you must run 'make' before running process_rabbit. 
+// All other scripts are not compiled, and do not require re-making. 
+//
+//////////////////////////////////////////////////////////////////////////
+
+
 #ifndef RabVar_h
 #define RabVar_h 1
 

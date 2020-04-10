@@ -92,7 +92,7 @@ void run_info(int run_num){
             cout << '\r' << "Processing event " << jentry;
         }
 
-        if (rabbit.ADC[BCI_chn] >10){
+        if (rabbit.ADC[BCI_chn] >min_BCI){
             hBCI->Fill(rabbit.ADC[BCI_chn]);
             if ((rabbit.cycle_time>time_irr[0])
               &&(rabbit.cycle_time<time_irr[1])){

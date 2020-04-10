@@ -30,7 +30,7 @@ public :
    Int_t           TDC[16];
    Bool_t          overflow[16];
    Bool_t          pileup[16];
-   Int_t           time_stamp[16];
+   Int_t           time_stamp;
    Double_t        seconds;
 
    // List of branches
