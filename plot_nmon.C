@@ -23,7 +23,7 @@
 #include "plot_FC.C"
 #include "RabVar.h"
 
-using namespace RabVar;
+using namespace RabVar; //bad habit - should rewrite
 
 using std::cout;
 using std::cerr;

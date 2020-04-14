@@ -13,7 +13,7 @@
 #include <vector>
 #include "RabVar.h"
 
-using namespace RabVar;
+using namespace RabVar; //bad habit, need to remove
 
 void bkgd_cal(int run_num = 0){
 

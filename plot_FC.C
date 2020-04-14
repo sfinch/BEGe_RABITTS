@@ -32,8 +32,8 @@ void plot_FC(int run_num){
     gStyle->SetOptStat(0);
 
     //Variables
-    TH1F *hFC[num_FC];
-    TLine *l[num_FC];
+    TH1F *hFC[RabVar::num_FC];
+    TLine *l[RabVar::num_FC];
 
     //get histos
     TFile *fHist;
@@ -57,13 +57,13 @@ void plot_FC(int run_num){
         hFC[j]->SetTitle(Form("Run %i, FC%i", run_num, j+1));
         cout << "FC" << j+1 << " counts: " << hFC[j]->Integral(FC_threshold[j], 65535) << endl;
 
-        hFC[j]->Rebin(FC_rebin);
+        hFC[j]->Rebin(RabVar::FC_rebin);
         hFC[j]->GetXaxis()->SetRangeUser(2000, 65535);
         hFC[j]->GetYaxis()->SetTitle("Counts");
         hFC[j]->GetXaxis()->SetTitle("ADC channel");
         hFC[j]->Draw();
 
-        l[j] = new TLine(FC_threshold[j], 0, FC_threshold[j], hFC[j]->GetMaximum());
+        l[j] = new TLine(RabVar::FC_threshold[j], 0, RabVar::FC_threshold[j], hFC[j]->GetMaximum());
         l[j]->SetLineColor(2);
         l[j]->SetLineWidth(2);
         l[j]->SetLineStyle(2);

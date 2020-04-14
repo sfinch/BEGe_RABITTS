@@ -24,7 +24,7 @@
 #include "include/MDPP16_SCP.h"
 #include "include/MDPP16_QDC.h"
 
-using namespace RabVar;
+using namespace RabVar; //bad habit, should re-write
 
 using std::cout;
 using std::cerr;

@@ -65,7 +65,10 @@ MDPP16_QDC::MDPP16_QDC(int run_num)
     else{
         file = new TFile(Form("data_root/RABITTS_%i.root", run_num));
     }
-    file->GetObject("MDPP16_QDC",fChain);
+
+    if (file->GetListOfKeys()->Contains("MDPP16_QDC")){
+        file->GetObject("MDPP16_QDC",fChain);
+    }
 
     Init();
 }

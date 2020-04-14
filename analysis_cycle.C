@@ -26,7 +26,7 @@ using std::cerr;
 using std::endl;
 
 #include "RabVar.h"
-using namespace RabVar;
+using namespace RabVar; //bad habit, need to remove
 
 void analysis_cycle(int run_num){
 

@@ -26,7 +26,7 @@ using namespace std;
 #include "include/processed_QDC.h"
 #include "RabVar.h"
 
-using namespace RabVar;
+using namespace RabVar; //bad habit, should rewrite
 
 struct correction{
     double corr = 0;

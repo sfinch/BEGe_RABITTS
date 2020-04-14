@@ -28,7 +28,7 @@ using namespace std;
 #include "include/processed_QDC.h"
 #include "RabVar.h"
 
-using namespace RabVar;
+using namespace RabVar; //bad habit, should rewrite
 
 void run_info(int run_num){
 
