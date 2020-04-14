@@ -15,16 +15,14 @@
 #include <fstream>
 #include <vector>
 
-#include <TH2.h>
 #include <TStyle.h>
+#include <TH1.h>
 #include <TCanvas.h>
 #include <TRandom3.h>
 
-#include "RabVar.h"
-#include "include/MDPP16_SCP.h"
-#include "include/MDPP16_QDC.h"
-
-using namespace RabVar; //bad habit, should re-write
+#include "RabVar.hh"
+#include "MDPP16_SCP.hh"
+#include "MDPP16_QDC.hh"
 
 using std::cout;
 using std::cerr;
@@ -34,8 +32,8 @@ using std::vector;
 
 
 struct calibration{     //struct storing calibration data for both dets
-    Float_t m[num_det];
-    Float_t b[num_det];
+    Float_t m[RabVar::num_det];
+    Float_t b[RabVar::num_det];
 };
     
 calibration read_in_cal(int run_num); // function to read in calibration from file
@@ -114,7 +112,7 @@ int process_rabbit(int run_num, bool opt_verbose){
     //output tree variables
     Float_t cycle_time = 0;
     Float_t nmon_PSD;
-    Float_t En[num_det];
+    Float_t En[RabVar::num_det];
     TRandom3 r;
 
     //out file
@@ -122,7 +120,7 @@ int process_rabbit(int run_num, bool opt_verbose){
     TTree *tProcessed = new TTree("processed", "Processed rabbit data");
     TTree *tProcessed_QDC = new TTree("processed_QDC", "Processed rabbit QDC data");
 
-    tProcessed->Branch(Form("En[%i]", num_det), &En, Form("En[%i]/F", num_det));
+    tProcessed->Branch(Form("En[%i]", RabVar::num_det), &En, Form("En[%i]/F", RabVar::num_det));
     tProcessed->Branch("cycle_time", &cycle_time, "cycle_time/F");
 
     tProcessed_QDC->Branch("cycle_time", &cycle_time, "cycle_time/F");
@@ -133,13 +131,13 @@ int process_rabbit(int run_num, bool opt_verbose){
     TH1F *hCountTime = new TH1F("hCountTime", "hCountTime", 100*100, 0, 100);
     TH1F *hCycleTime = new TH1F("hCycleTime", "hCycleTime", 10*110, -10, 100);
     TH1F *hNmon_PSD = new TH1F("hNmon_PSD", "hNmon_PSD", 2500, -5, 5);
-    TH1F *hEn[num_det];
-    for (int det=0; det<num_det; det++){
+    TH1F *hEn[RabVar::num_det];
+    for (int det=0; det<RabVar::num_det; det++){
         hEn[det] = new TH1F(Form("hEn%i", det), Form("hEn%i", det), 10*3000, 0, 3000);
     }
 
     //check if Rabbit used during run
-    TH1F *hRabbit = (TH1F*)rabbit.file->Get(Form("histos_SCP/hADC%i", rabbit_chn));
+    TH1F *hRabbit = (TH1F*)rabbit.file->Get(Form("histos_SCP/hADC%i", RabVar::rabbit_chn));
     int counts = hRabbit->Integral(10,65000);
     if (counts>1){
         source_run = 0;
@@ -153,7 +151,7 @@ int process_rabbit(int run_num, bool opt_verbose){
     //find start offset
     if (!(source_run)){
         for (Long64_t jentry=0; jentry<nentries;jentry++) { rabbit.GetEntry(jentry);
-            if (rabbit.ADC[rabbit_chn]>10){
+            if (rabbit.ADC[RabVar::rabbit_chn]>10){
                 start_offset = rabbit.seconds; 
                 start_event = jentry-1; 
                 jentry = nentries;
@@ -167,7 +165,7 @@ int process_rabbit(int run_num, bool opt_verbose){
     if (!(source_run)){
         for (Long64_t jentry=nentries-1; jentry>0; jentry--) {
             rabbit.GetEntry(jentry);
-            if (rabbit.ADC[rabbit_chn]>10){
+            if (rabbit.ADC[RabVar::rabbit_chn]>10){
                 end_offset = rabbit.seconds; 
                 end_event = jentry+1; 
                 jentry = 0;
@@ -193,7 +191,7 @@ int process_rabbit(int run_num, bool opt_verbose){
 
             //calculate cycle time
             if (pos == 0){//Rabbit has yet to be moved
-                if ((rabbit.ADC[rabbit_chn]>10)||(rabbit.TDC[rabbit_chn]>10)){
+                if ((rabbit.ADC[RabVar::rabbit_chn]>10)||(rabbit.TDC[RabVar::rabbit_chn]>10)){
 
                     pos = 1;
                     irr_start.push_back(rabbit.seconds);
@@ -204,12 +202,12 @@ int process_rabbit(int run_num, bool opt_verbose){
                 }
             }
             else{//rabbit has moved
-                if ((rabbit.ADC[rabbit_chn]>10)||(rabbit.TDC[rabbit_chn]>10)){
+                if ((rabbit.ADC[RabVar::rabbit_chn]>10)||(rabbit.TDC[RabVar::rabbit_chn]>10)){
                     //rabbit currently moving
-                    if ((rabbit.seconds-last_move)>min_time){ //min time filter
+                    if ((rabbit.seconds-last_move)>RabVar::min_time){ //min time filter
 
                         if (pos == 1){          //irradiation
-                            if ((rabbit.seconds-irr_start.back())>(last_irr_length*min_var)){//min var filter
+                            if ((rabbit.seconds-irr_start.back())>(last_irr_length*RabVar::min_var)){//min var filter
                                 pos = -1;
                                 last_irr_length = rabbit.seconds - irr_start.back();
                                 count_start.push_back(rabbit.seconds);
@@ -220,7 +218,7 @@ int process_rabbit(int run_num, bool opt_verbose){
                             }
                         }
                         else if (pos == -1){    //counting
-                            if ((rabbit.seconds-count_start.back())>(last_count_length*min_var)){//min var filter
+                            if ((rabbit.seconds-count_start.back())>(last_count_length*RabVar::min_var)){//min var filter
                                 pos = 1;
                                 last_count_length = rabbit.seconds - count_start.back();
                                 irr_start.push_back(rabbit.seconds);
@@ -247,11 +245,11 @@ int process_rabbit(int run_num, bool opt_verbose){
                 cycle_time = rabbit.seconds - irr_start.back();
 
                 //Check for missed transition
-                if ((last_irr_length>min_time) && (last_count_length>min_time)){
+                if ((last_irr_length>RabVar::min_time) && (last_count_length>RabVar::min_time)){
                     if (rabbit.seconds<end_offset){
                         //not at the end of the run, after rabbit turned off
                         if ((pos==1) && 
-                           ((rabbit.seconds-irr_start.back())>(last_irr_length*max_var))){
+                           ((rabbit.seconds-irr_start.back())>(last_irr_length*RabVar::max_var))){
                             //missed irradiation pulse
                             if (opt_verbose){
                                 cout << "== MISSED COUNTING PULSE ========" << endl;
@@ -289,7 +287,7 @@ int process_rabbit(int run_num, bool opt_verbose){
                             }
                         }
                         else if ((pos==-1) && 
-                                ((rabbit.seconds-count_start.back())>(last_count_length*max_var))){
+                                ((rabbit.seconds-count_start.back())>(last_count_length*RabVar::max_var))){
                             //missed counting pulse
                             if (opt_verbose){
                                 cout << "== MISSED COUNTING PULSE ========" << endl;
@@ -362,11 +360,11 @@ int process_rabbit(int run_num, bool opt_verbose){
         }
 
         //energy calibrate detectors
-        for (int det=0; det<num_det; det++){ //loop over detectors
+        for (int det=0; det<RabVar::num_det; det++){ //loop over detectors
             En[det] = 0;
-            if ((rabbit.ADC[det_chn[det]]>10)&&(!(rabbit.overflow[det_chn[det]]))){
+            if ((rabbit.ADC[RabVar::det_chn[det]]>10)&&(!(rabbit.overflow[RabVar::det_chn[det]]))){
                 //Calibrate
-                En[det] = (rabbit.ADC[det_chn[det]]+r.Rndm()-0.5)*( (*rabbit.m) )[det] + ( (*rabbit.b) )[det];
+                En[det] = (rabbit.ADC[RabVar::det_chn[det]]+r.Rndm()-0.5)*( (*rabbit.m) )[det] + ( (*rabbit.b) )[det];
                 En[det] = int(100*(En[det]*cal.m[det] + cal.b[det]));
                 En[det] = En[det]/100.;
                 //fill histos
@@ -409,9 +407,9 @@ int process_rabbit(int run_num, bool opt_verbose){
 
         //Calculated values (PSD)
         nmon_PSD = 0;
-        if ((rabbit_QDC.ADC_long[nmon_chn]>1)&&(!(rabbit_QDC.overflow[nmon_chn]))){
-            nmon_PSD = int((r.Rndm() + rabbit_QDC.ADC_long[nmon_chn] - rabbit_QDC.ADC_short[nmon_chn])
-                       *100./(r.Rndm() + rabbit_QDC.ADC_long[nmon_chn]));
+        if ((rabbit_QDC.ADC_long[RabVar::nmon_chn]>1)&&(!(rabbit_QDC.overflow[RabVar::nmon_chn]))){
+            nmon_PSD = int((r.Rndm() + rabbit_QDC.ADC_long[RabVar::nmon_chn] - rabbit_QDC.ADC_short[RabVar::nmon_chn])
+                       *100./(r.Rndm() + rabbit_QDC.ADC_long[RabVar::nmon_chn]));
             nmon_PSD = nmon_PSD/100.;
             hNmon_PSD->Fill(nmon_PSD);
         }
@@ -440,7 +438,7 @@ int process_rabbit(int run_num, bool opt_verbose){
     hCountTime->Write();
     hCycleTime->Write();
     hNmon_PSD->Write();
-    for (int det=0; det<num_det; det++){
+    for (int det=0; det<RabVar::num_det; det++){
         hEn[det]->Write();
     }
 
@@ -453,7 +451,7 @@ int process_rabbit(int run_num, bool opt_verbose){
 calibration read_in_cal(int run_num){
 
     //variables to read in from file
-    Float_t m_file[num_det], b_file[num_det];
+    Float_t m_file[RabVar::num_det], b_file[RabVar::num_det];
     int run, run2;
     
     //calibration data
@@ -462,7 +460,7 @@ calibration read_in_cal(int run_num){
 
     //return values
     calibration cal;
-    for (int i = 0; i<num_det; i++){
+    for (int i = 0; i<RabVar::num_det; i++){
         cal.m[i] = 1.;
         cal.b[i] = 0;
     }
@@ -473,14 +471,14 @@ calibration read_in_cal(int run_num){
         if (run<0 || run>10000){
             break;
         }
-        for (int j=0; j<num_det; j++){
+        for (int j=0; j<RabVar::num_det; j++){
             infile>>m_file[j];
         }
         infile>>run2;
         if ((run != run2) && (run2 != 0)){
             cout << "ERROR IN DATA FILE! Entry:  " << run << endl;
         }
-        for (int j=0; j<num_det; j++){
+        for (int j=0; j<RabVar::num_det; j++){
             infile>>b_file[j];
         }
         if (run == run_num){
@@ -494,11 +492,11 @@ calibration read_in_cal(int run_num){
         //print calibration values
         cout << "Found run " << run << ", using calibration:" << endl;
         cout << "m:  ";
-        for (int i = 0; i<num_det; i++){
+        for (int i = 0; i<RabVar::num_det; i++){
             cout << m_file[i] << "  ";
         }
         cout << endl << "b:  ";
-        for (int i = 0; i<num_det; i++){
+        for (int i = 0; i<RabVar::num_det; i++){
             cout << b_file[i] << "  ";
         }
         cout << endl;
@@ -507,7 +505,7 @@ calibration read_in_cal(int run_num){
         char ans = 'y';
         //cin >> ans;
         if  (ans == 'y'){
-            for (int i = 0; i<num_det; i++){
+            for (int i = 0; i<RabVar::num_det; i++){
                 cal.m[i] = m_file[i];
                 cal.b[i] = b_file[i];
             }

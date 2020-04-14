@@ -9,11 +9,10 @@
 //  Requires that data has been converted to ROOT using mvme2root       //
 //////////////////////////////////////////////////////////////////////////
 
-
 #include <vector>
-#include "RabVar.h"
 
-using namespace RabVar; //bad habit, need to remove
+#include "include/RabVar.hh"
+
 
 void bkgd_cal(int run_num = 0){
 
@@ -26,15 +25,15 @@ void bkgd_cal(int run_num = 0){
 
     std::vector<double> energy;
     std::vector<double> energy_error;
-    std::vector<double> startrange[num_det];
-    std::vector<double> endrange[num_det];
+    std::vector<double> startrange[RabVar::num_det];
+    std::vector<double> endrange[RabVar::num_det];
 
     // Set initial ranges for each fit. Will fit the largest ADC peak in the region and
     // calibrate it to the corresponding energy
     //185
     energy.push_back(185.72);
     energy_error.push_back(0.02);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(175);
         endrange[i].push_back(195);
     }
@@ -42,7 +41,7 @@ void bkgd_cal(int run_num = 0){
     //351
     energy.push_back(351.92);
     energy_error.push_back(0.02);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(347);
         endrange[i].push_back(355);
     }
@@ -51,7 +50,7 @@ void bkgd_cal(int run_num = 0){
     /*
     energy.push_back(511.0);
     energy_error.push_back(0.02);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(500);
         endrange[i].push_back(520);
     }
@@ -60,7 +59,7 @@ void bkgd_cal(int run_num = 0){
     //609
     energy.push_back(609.320);
     energy_error.push_back(0.005);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(605);
         endrange[i].push_back(619);
     }
@@ -68,7 +67,7 @@ void bkgd_cal(int run_num = 0){
     //1001
     energy.push_back(1001.03);
     energy_error.push_back(0.10);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(995);
         endrange[i].push_back(1006);
     }
@@ -76,7 +75,7 @@ void bkgd_cal(int run_num = 0){
     //1120
     energy.push_back(1120.4);
     energy_error.push_back(0.10);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(1105);
         endrange[i].push_back(1130);
     }
@@ -84,7 +83,7 @@ void bkgd_cal(int run_num = 0){
     //1461
     energy.push_back(1460.822);
     energy_error.push_back(0.06);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(1440);
         endrange[i].push_back(1490);
     }
@@ -92,7 +91,7 @@ void bkgd_cal(int run_num = 0){
     //1764
     energy.push_back(1764.491);
     energy_error.push_back(0.01);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(1750);
         endrange[i].push_back(1775);
     }
@@ -100,7 +99,7 @@ void bkgd_cal(int run_num = 0){
     //2204
     energy.push_back(2204.059);
     energy_error.push_back(0.022);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(2190);
         endrange[i].push_back(2220);
     }
@@ -108,7 +107,7 @@ void bkgd_cal(int run_num = 0){
     //Pb
     energy.push_back(2614.511);
     energy_error.push_back(0.01);
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         startrange[i].push_back(2590);
         endrange[i].push_back(2630);
     }
@@ -116,23 +115,23 @@ void bkgd_cal(int run_num = 0){
 
     //variables
     const int num_points = energy.size();
-    double centroid[num_det][num_points];
-    double centroid_error[num_det][num_points];
-    double FWHM[num_det][num_points];
-    double FWHM_error[num_det][num_points];
-    double m[num_det];
-    double b[num_det];
-    double residual[num_det][num_points];
-    double residual_error[num_det][num_points];
-    for (int i=0; i<num_det; i++){
+    double centroid[RabVar::num_det][num_points];
+    double centroid_error[RabVar::num_det][num_points];
+    double FWHM[RabVar::num_det][num_points];
+    double FWHM_error[RabVar::num_det][num_points];
+    double m[RabVar::num_det];
+    double b[RabVar::num_det];
+    double residual[RabVar::num_det][num_points];
+    double residual_error[RabVar::num_det][num_points];
+    for (int i=0; i<RabVar::num_det; i++){
         m[i]=0;
         b[i]=0;
     }
 
     //root histos
     TCanvas *cPeak[num_points];
-    TH1F *hADC[num_det][num_points];
-    TF1 *peak[num_det][num_points];
+    TH1F *hADC[RabVar::num_det][num_points];
+    TF1 *peak[RabVar::num_det][num_points];
 
     // file with root data
     TFile *fRun; 
@@ -155,11 +154,11 @@ void bkgd_cal(int run_num = 0){
         int kev = energy[j];
         cPeak[j] = new TCanvas(Form("cPeak%i",j),Form("Calibration Peak %d", kev),1200,600);
         cPeak[j]->Divide(4,2);
-        for (int i=0; i<num_det; i++){      // loop over all detectors
+        for (int i=0; i<RabVar::num_det; i++){      // loop over all detectors
             cPeak[j]->cd(i+1);
 
             if (j==0){     //project ADC histos from file on first loop
-                hADC[i][j] = (TH1F*) fRun->Get(Form("histos_SCP/hEn%i", det_chn[i]));
+                hADC[i][j] = (TH1F*) fRun->Get(Form("histos_SCP/hEn%i", RabVar::det_chn[i]));
             }
             else{           //copy histos on following loops
                 hADC[i][j] = (TH1F*)hADC[i][0]->Clone(Form("hADC%i%i",i,j));
@@ -210,16 +209,16 @@ void bkgd_cal(int run_num = 0){
     // graphs of calibrations
     TCanvas *cCal = new TCanvas("cCal","Calibration Peaks and Fit",1200,600);
     cCal->Divide(4,2);
-    TGraphErrors *tCal[num_det];
+    TGraphErrors *tCal[RabVar::num_det];
     
     // graphs for calibration residuals
     TCanvas *cRes = new TCanvas("cRes","Calibration residuals",1200,600);
     cRes->Divide(4,2);
-    TGraphErrors *tRes[num_det];
-    TF1 *fCal[num_det];
+    TGraphErrors *tRes[RabVar::num_det];
+    TF1 *fCal[RabVar::num_det];
 
     // make graphs
-    for (int i=0; i<num_det; i++){
+    for (int i=0; i<RabVar::num_det; i++){
         // calibration
         cCal->cd(i+1);
         tCal[i] = new TGraphErrors(num_points, centroid[i], energy.data(), 
@@ -259,7 +258,7 @@ void bkgd_cal(int run_num = 0){
 
     }
 
-    for (int j=0; j<num_det; j++){
+    for (int j=0; j<RabVar::num_det; j++){
         cout << "------------------------------------------------------------" << endl;
         cout << "                    Detector " << j+1 << endl;
         cout << "------------------------------------------------------------" << endl;
@@ -281,11 +280,11 @@ void bkgd_cal(int run_num = 0){
         FILE *file_ptr;
         file_ptr = fopen("datafiles/det_cal.dat","a");
         fprintf(file_ptr, "%i", run_num);
-        for (int i=0; i<num_det; i++){
+        for (int i=0; i<RabVar::num_det; i++){
             fprintf(file_ptr,"\t%f", m[i]); 
         }
         fprintf(file_ptr, "\n%i", run_num);
-        for (int i=0; i<num_det; i++){
+        for (int i=0; i<RabVar::num_det; i++){
             fprintf(file_ptr,"\t%f", b[i]); 
         }
         fprintf(file_ptr, "\n");

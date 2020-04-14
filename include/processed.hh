@@ -12,6 +12,8 @@
 #include <TChain.h>
 #include <TFile.h>
 
+#include "RabVar.hh"
+
 // Header file for the classes stored in the TTree if any.
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
@@ -23,7 +25,7 @@ public :
    TFile          *rawfile;
 
    // Declaration of leaf types
-   Float_t         En[6];
+   Float_t         En[RabVar::num_det];
    Float_t         cycle_time;
 
    Int_t           ADC[16];
@@ -97,7 +99,7 @@ void processed::Init()
    if (!fChain) return;
    fChain->SetMakeClass(1);
 
-   fChain->SetBranchAddress("En[6]", En, &b_En);
+   fChain->SetBranchAddress(Form("En[%i]", RabVar::num_det), En, &b_En);
    fChain->SetBranchAddress("cycle_time", &cycle_time, &b_cycle_time);
 
    fChain->SetBranchAddress("ADC[16]", ADC, &b_ADC);

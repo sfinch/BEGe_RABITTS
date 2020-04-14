@@ -16,17 +16,13 @@ using namespace std;
 #include "TApplication.h"
 #include "TROOT.h"
 #include "TH1.h"
-#include "TChain.h"
 #include "TCanvas.h"
 #include "TStyle.h"
-#include "TLine.h"
-#include "TFile.h"
 
-#include "include/processed.h"
-#include "include/processed_QDC.h"
-#include "RabVar.h"
+#include "include/processed.hh"
+#include "include/processed_QDC.hh"
+#include "include/RabVar.hh"
 
-using namespace RabVar; //bad habit, should rewrite
 
 struct correction{
     double corr = 0;
@@ -70,11 +66,11 @@ void beam_corr(int run_num){
             cout << '\r' << "Processing event " << jentry;
         }
 
-        if (rabbit.ADC[BCI_chn] >min_BCI){
+        if (rabbit.ADC[RabVar::BCI_chn] > RabVar::min_BCI){
             corr_BCI.corr += exp(-1*lambda*rabbit.seconds);
             corr_BCI.num_events++;
-            if ((rabbit.cycle_time>time_irr[0])
-              &&(rabbit.cycle_time<time_irr[1])){
+            if ((rabbit.cycle_time > RabVar::time_irr[0])
+              &&(rabbit.cycle_time < RabVar::time_irr[1])){
                 corr_BCI.corr_irr += exp(-1*lambda*rabbit.seconds);
                 corr_BCI.num_events_irr++;
             }
@@ -97,20 +93,20 @@ void beam_corr(int run_num){
         if (jentry%100000==0){
             cout << '\r' << "Processing event " << jentry;
         }
-        if (rabbit_QDC.ADC_long[nmon_chn]>min_nmon_E){
+        if (rabbit_QDC.ADC_long[RabVar::nmon_chn] > RabVar::min_nmon_E){
             corr_nmon.corr += exp(-1*lambda*rabbit_QDC.seconds);
             corr_nmon.num_events++;
-            if ((rabbit_QDC.nmon_PSD>nmon_PSD_cut[0])
-                && (rabbit_QDC.nmon_PSD<nmon_PSD_cut[1])){
+            if ((rabbit_QDC.nmon_PSD > RabVar::nmon_PSD_cut[0])
+                && (rabbit_QDC.nmon_PSD < RabVar::nmon_PSD_cut[1])){
                 corr_nPSD.corr += exp(-1*lambda*rabbit_QDC.seconds);
                 corr_nPSD.num_events++;
             }
-            if ((rabbit_QDC.cycle_time>time_irr[0])
-              &&(rabbit_QDC.cycle_time<time_irr[1])){
+            if ((rabbit_QDC.cycle_time > RabVar::time_irr[0])
+              &&(rabbit_QDC.cycle_time < RabVar::time_irr[1])){
                 corr_nmon.corr_irr += exp(-1*lambda*rabbit_QDC.seconds);
                 corr_nmon.num_events_irr++;
-                if ((rabbit_QDC.nmon_PSD>nmon_PSD_cut[0])
-                    && (rabbit_QDC.nmon_PSD<nmon_PSD_cut[1])){
+                if ((rabbit_QDC.nmon_PSD > RabVar::nmon_PSD_cut[0])
+                    && (rabbit_QDC.nmon_PSD < RabVar::nmon_PSD_cut[1])){
                     corr_nPSD.corr_irr += exp(-1*lambda*rabbit_QDC.seconds);
                     corr_nPSD.num_events_irr++;
                 }

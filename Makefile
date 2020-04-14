@@ -15,7 +15,7 @@ OBJ = $(patsubst $(src_dir)/%.$(src_ext),$(obj_dir)/%.o,$(SRCS))
 
 all: process_rabbit 
 
-process_rabbit: $(OBJ) process_rabbit.C
+process_rabbit: $(OBJ) process_rabbit.cpp
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS) $(GLIBS)
 
 $(obj_dir)/%.o : $(src_dir)/%.$(src_ext) $(DEPS)

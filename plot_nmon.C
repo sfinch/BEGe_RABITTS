@@ -13,40 +13,43 @@
 
 #include <iostream>
 
-#include <TH2.h>
-#include <TStyle.h>
-#include <TCanvas.h>
-#include <TRandom3.h>
-
-#include "include/processed.h"
-#include "include/processed_QDC.h"
-#include "plot_FC.C"
-#include "RabVar.h"
-
-using namespace RabVar; //bad habit - should rewrite
-
 using std::cout;
 using std::cerr;
 using std::endl;
 
+#include <TStyle.h>
+#include <TCanvas.h>
+
+#include "include/processed.hh"
+#include "include/processed_QDC.hh"
+#include "include/RabVar.hh"
+#include "include/HistVar.hh"
+#include "plot_FC.C"
+
+
 void plot_nmon(int run_num){
 
     //Histograms
-    TH1F *hCycFC[num_FC];
-    TH1F *hHPGe[num_BEGe];
+    TH1F *hCycFC[RabVar::num_FC];
+    TH1F *hHPGe[RabVar::num_BEGe];
     TH1F *hCycNmon  = new TH1F("hCycNmon", "Neutron monitor", 
-                               cycle_time_bins, min_cycle_time, max_cycle_time);
+                               HistVar::cycle_time_bins, HistVar::min_cycle_time,
+                               HistVar::max_cycle_time);
     TH1F *hCycNPSD  = new TH1F("hCycNPSD", "Neutron monitor with PSD", 
-                               cycle_time_bins, min_cycle_time, max_cycle_time);
+                               HistVar::cycle_time_bins, HistVar::min_cycle_time,
+                               HistVar::max_cycle_time);
     TH1F *hCycBCI   = new TH1F("hCycBCI", "BCI",
-                               cycle_time_bins, min_cycle_time, max_cycle_time);
-    for (int i=0; i<num_FC; i++){
+                               HistVar::cycle_time_bins, HistVar::min_cycle_time,
+                               HistVar::max_cycle_time);
+    for (int i=0; i<RabVar::num_FC; i++){
         hCycFC[i] = new TH1F(Form("hCycFC%i", i), Form("FC %i", i), 
-                             cycle_time_bins, min_cycle_time, max_cycle_time);
+                             HistVar::cycle_time_bins, HistVar::min_cycle_time, 
+                             HistVar::max_cycle_time);
     }
-    for (int i=0; i<num_BEGe; i++){
+    for (int i=0; i<RabVar::num_BEGe; i++){
         hHPGe[i] = new TH1F(Form("hHPGe%i", i), Form("BEGe %i", i),
-                            cycle_time_bins, min_cycle_time, max_cycle_time);
+                            HistVar::cycle_time_bins, HistVar::min_cycle_time, 
+                            HistVar::max_cycle_time);
     }
 
     //TLines
@@ -67,16 +70,16 @@ void plot_nmon(int run_num){
         if (jentry%100000==0){
             cout << '\r' << "Processing event " << jentry;
         }
-        if (rabbit.ADC[BCI_chn]>min_BCI){
+        if (rabbit.ADC[RabVar::BCI_chn] > RabVar::min_BCI){
             hCycBCI->Fill(rabbit.cycle_time);
         }
-        for (int i=0; i<num_FC; i++){
-            if (rabbit.ADC[FC_chn[i]]>FC_threshold[i]){
+        for (int i=0; i<RabVar::num_FC; i++){
+            if (rabbit.ADC[RabVar::FC_chn[i]] > RabVar::FC_threshold[i]){
                 hCycFC[i]->Fill(rabbit.cycle_time);
             }
         }
-        for (int i=0; i<num_FC; i++){
-            if (rabbit.En[i]>min_BEGe_E[i]){
+        for (int i=0; i<RabVar::num_FC; i++){
+            if (rabbit.En[i] > RabVar::min_BEGe_E[i]){
                 hHPGe[i]->Fill(rabbit.cycle_time);
             }
         }
@@ -94,10 +97,10 @@ void plot_nmon(int run_num){
         if (jentry%100000==0){
             cout << '\r' << "Processing event " << jentry;
         }
-        if (rabbit_QDC.ADC_long[nmon_chn]>min_nmon_E){
+        if (rabbit_QDC.ADC_long[RabVar::nmon_chn] > RabVar::min_nmon_E){
             hCycNmon->Fill(rabbit_QDC.cycle_time);
-            if ((rabbit_QDC.nmon_PSD>nmon_PSD_cut[0])
-                && (rabbit_QDC.nmon_PSD<nmon_PSD_cut[1])){
+            if ((rabbit_QDC.nmon_PSD>RabVar::nmon_PSD_cut[0])
+                && (rabbit_QDC.nmon_PSD<RabVar::nmon_PSD_cut[1])){
                 hCycNPSD->Fill(rabbit_QDC.cycle_time);
             }
         }
@@ -106,17 +109,17 @@ void plot_nmon(int run_num){
     cout << endl;
 
     for (int i=0; i<2; i++){
-        lIrr[i][0] = new TLine(time_irr[i], 0, time_irr[i], hCycBCI->GetMaximum());
-        lIrr[i][1] = new TLine(time_irr[i], 0, time_irr[i], hCycNmon->GetMaximum());
-        lIrr[i][2] = new TLine(time_irr[i], 0, time_irr[i], hCycFC[0]->GetMaximum());
-        lIrr[i][3] = new TLine(time_irr[i], 0, time_irr[i], hCycFC[1]->GetMaximum());
-        lIrr[i][4] = new TLine(time_irr[i], 0, time_irr[i], hHPGe[0]->GetMaximum());
+        lIrr[i][0] = new TLine(RabVar::time_irr[i], 0, RabVar::time_irr[i], hCycBCI->GetMaximum());
+        lIrr[i][1] = new TLine(RabVar::time_irr[i], 0, RabVar::time_irr[i], hCycNmon->GetMaximum());
+        lIrr[i][2] = new TLine(RabVar::time_irr[i], 0, RabVar::time_irr[i], hCycFC[0]->GetMaximum());
+        lIrr[i][3] = new TLine(RabVar::time_irr[i], 0, RabVar::time_irr[i], hCycFC[1]->GetMaximum());
+        lIrr[i][4] = new TLine(RabVar::time_irr[i], 0, RabVar::time_irr[i], hHPGe[0]->GetMaximum());
 
-        lCount[i][0] = new TLine(time_count[i], 0, time_count[i], hCycBCI->GetMaximum());
-        lCount[i][1] = new TLine(time_count[i], 0, time_count[i], hCycNmon->GetMaximum());
-        lCount[i][2] = new TLine(time_count[i], 0, time_count[i], hCycFC[0]->GetMaximum());
-        lCount[i][3] = new TLine(time_count[i], 0, time_count[i], hCycFC[1]->GetMaximum());
-        lCount[i][4] = new TLine(time_count[i], 0, time_count[i], hHPGe[0]->GetMaximum());
+        lCount[i][0] = new TLine(RabVar::time_count[i], 0, RabVar::time_count[i], hCycBCI->GetMaximum());
+        lCount[i][1] = new TLine(RabVar::time_count[i], 0, RabVar::time_count[i], hCycNmon->GetMaximum());
+        lCount[i][2] = new TLine(RabVar::time_count[i], 0, RabVar::time_count[i], hCycFC[0]->GetMaximum());
+        lCount[i][3] = new TLine(RabVar::time_count[i], 0, RabVar::time_count[i], hCycFC[1]->GetMaximum());
+        lCount[i][4] = new TLine(RabVar::time_count[i], 0, RabVar::time_count[i], hHPGe[0]->GetMaximum());
 
         for (int j=0; j<5; j++){
             lIrr[i][j]->SetLineColor(2);
@@ -165,7 +168,7 @@ void plot_nmon(int run_num){
     }
 
     cCycle->cd(5);
-    for (int i=0; i<num_BEGe; i++){
+    for (int i=0; i<RabVar::num_BEGe; i++){
         hHPGe[i]->SetLineColor(1+i);
         hHPGe[i]->Draw("same");
     }

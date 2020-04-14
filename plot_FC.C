@@ -24,8 +24,8 @@ using namespace std;
 #include "TLine.h"
 #include "TFile.h"
 
-#include "RabVar.h"
-using namespace RabVar;
+#include "include/RabVar.hh"
+
 
 void plot_FC(int run_num){
 
@@ -48,14 +48,14 @@ void plot_FC(int run_num){
     }
 
     TCanvas *cFC = new TCanvas("cFC","Fisson chamber energy spectra", 800, 800);
-    cFC->Divide(1, num_FC);
+    cFC->Divide(1, RabVar::num_FC);
 
-    for (int j=0; j<num_FC; j++){
+    for (int j=0; j<RabVar::num_FC; j++){
         cFC->cd(j+1);
 
-        hFC[j] = (TH1F*) (fHist->Get(Form("histos_SCP/hADC%i", FC_chn[j])))->Clone();
+        hFC[j] = (TH1F*) (fHist->Get(Form("histos_SCP/hADC%i", RabVar::FC_chn[j])))->Clone();
         hFC[j]->SetTitle(Form("Run %i, FC%i", run_num, j+1));
-        cout << "FC" << j+1 << " counts: " << hFC[j]->Integral(FC_threshold[j], 65535) << endl;
+        cout << "FC" << j+1 << " counts: " << hFC[j]->Integral(RabVar::FC_threshold[j], 65535) << endl;
 
         hFC[j]->Rebin(RabVar::FC_rebin);
         hFC[j]->GetXaxis()->SetRangeUser(2000, 65535);
