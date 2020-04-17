@@ -65,9 +65,16 @@ void DT::calc(){
         exp_int = fExpo->Eval(0)*(-1.)/(rebin*1.*fExpo->GetParameter(1));
 
         num_write = exp_int - num_events;
+        if (num_write<0){
+            exp_int = (fExpo->Eval(5000) - fExpo->Eval(0))/(rebin*1.*fExpo->GetParameter(1));
+            num_write = exp_int - hTS->Integral(0, 5000/rebin);
+            cout << exp_int << endl;
+            cout << num_write << endl;
+        }
 
         percent_PU = 100*num_PU/num_events;
         percent_write = 100*num_write/num_events;
+
         if (percent_write>100){
             percent_write = 0;
             num_write = 0;
@@ -235,7 +242,7 @@ void deadtime(int run_num){
     cout << "-------------------------------------------------------------" << endl;
     cout << "Total run" << endl;
     cout << "-------------------------------------------------------------" << endl;
-    cout << "Chn \tRate\tPileup \tWrite \tCombined " << endl;
+    cout << "Chn \tRate \tPileup \tWrite \tCombined " << endl;
     for (int chn=0; chn<16; chn++){
         SCP[chn]->rate = SCP[chn]->num_events/elapsed_time;
         //cout << chn << "\t" << SCP[chn]->num_events<< "\t"
