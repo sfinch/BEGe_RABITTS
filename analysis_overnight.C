@@ -13,6 +13,7 @@
 
 #include <TStyle.h>
 #include <TCanvas.h>
+#include <TDatime.h>
 
 using std::cout;
 using std::cerr;
@@ -25,11 +26,22 @@ using std::endl;
 
 void analysis_overnight(int run_num){
 
-    //Variables
-    TH1F *hEnAll[RabVar::num_BEGe+1];
-    TH1F *hEnWin[RabVar::num_overnight_win][RabVar::num_BEGe+1]; //[window 1-3][det 1, 2, summed]
+    //in file
+    processed rabbit(run_num);
 
-    for (int i=0; i<RabVar::num_overnight_win; i++){
+    TDatime tStart = TDatime(rabbit.rawfile->Get("start_time")->GetTitle());
+    TDatime tStop = TDatime(rabbit.rawfile->Get("stop_time")->GetTitle());
+    int elapsed_time = tStop.Convert() - tStart.Convert();
+    const int num_overnight_win = int(elapsed_time/RabVar::overnight_win_time) + 1;
+
+    //out file
+    TFile *fHist = new TFile(Form("data_hist/RABBIT_%i.root", run_num), "RECREATE");
+
+    // Histograms
+    TH1F *hEnAll[RabVar::num_BEGe+1];
+    TH1F *hEnWin[num_overnight_win][RabVar::num_BEGe+1]; //[window 1-3][det 1, 2, summed]
+
+    for (int i=0; i<num_overnight_win; i++){
         for (int j=0; j<RabVar::num_BEGe; j++){
             hEnWin[i][j] = new TH1F(Form("run%i_Hour%i_Det%i", run_num, (i+1), j), Form("hEnWin%i%i", i, j), 30000, 0, 3000);
         }
@@ -42,17 +54,12 @@ void analysis_overnight(int run_num){
     hEnAll[RabVar::num_BEGe] = new TH1F(Form("run%i_All_BothDet", run_num), Form("hEnAll%i", RabVar::num_BEGe), 30000, 0, 3000);
 
     //cuts
-    double time_win[RabVar::num_overnight_win][2];
-    for (int i=0; i<RabVar::num_overnight_win; i++){
+    double time_win[num_overnight_win][2];
+    for (int i=0; i<num_overnight_win; i++){
         time_win[i][0] = i*RabVar::overnight_win_time;
         time_win[i][1] = (i+1)*RabVar::overnight_win_time;
     }
 
-    //in file
-    processed rabbit(run_num);
-
-    //out file
-    TFile *fHist = new TFile(Form("data_hist/RABBIT_%i.root", run_num), "RECREATE");
 
     //loop over data
     Long64_t nentries = rabbit.fChain->GetEntriesFast();
@@ -71,7 +78,7 @@ void analysis_overnight(int run_num){
             }
         }
 
-        for (int window=0; window<RabVar::num_overnight_win; window++){
+        for (int window=0; window<num_overnight_win; window++){
             if ((rabbit.seconds>time_win[window][0]) && (rabbit.seconds<time_win[window][1])){
                 //clover 1
                 if (rabbit.En[0]>10){
@@ -93,8 +100,8 @@ void analysis_overnight(int run_num){
     cout << rabbit.seconds/3600. << " h elapsed" <<  endl;
     cout << rabbit.seconds/RabVar::overnight_win_time << " total time cycles" <<  endl;
     cout << cycles_complete << " complete cycles" <<  endl;
-    if (cycles_complete>RabVar::num_overnight_win){
-        cycles_complete=RabVar::num_overnight_win;
+    if (cycles_complete>num_overnight_win){
+        cycles_complete=num_overnight_win;
     }
 
     TCanvas *cDet1 = new TCanvas("cDet1","Det 1",1000, 400);

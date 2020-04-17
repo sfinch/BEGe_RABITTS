@@ -33,8 +33,7 @@ namespace RabVar{
     const int num_win = 10;
     
     // analysis_overnight.C
-    // Saves histograms every 3600 s for up to 16 cycles
-    const int num_overnight_win = 16;
+    // Saves histograms every 3600 s (1 hour)
     const double overnight_win_time =3600; //in sec
 
     ///////////////////////////////////////////////////////////////
@@ -49,7 +48,7 @@ namespace RabVar{
     // BEGe detectors (in SCP)
     // BEGes are always the first two HPGe detectors in the above array.
     const int num_BEGe = 2;
-    const int min_BEGe_E[2] = {100, 100};
+    const int min_BEGe_E[2] = {100, 100}; // in keV
 
     // Fission chambers (in SCP)
     const int num_FC = 2;
@@ -62,7 +61,7 @@ namespace RabVar{
 
     //BCI (in SCP)
     const int BCI_chn = 14;
-    const int min_BCI = 10;
+    const int min_BCI = 10; //in ADC channel
 
     // Neutron monitor (in QDC) 
     const int nmon_chn = 2;
