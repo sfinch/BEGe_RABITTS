@@ -13,10 +13,10 @@
 namespace HistVar{
     
     //Cycle time ranges (for plots)
-    double min_cycle_time = -1;
-    double max_cycle_time = 89;
-    double cycle_bin_per_sec = 100;
-    int cycle_time_bins = cycle_bin_per_sec*(max_cycle_time-min_cycle_time);
+    const double min_cycle_time = -1;
+    const double max_cycle_time = 89;
+    const double cycle_bin_per_sec = 100;
+    const int cycle_time_bins = cycle_bin_per_sec*(max_cycle_time-min_cycle_time);
 
 }
 
