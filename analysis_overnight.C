@@ -35,7 +35,7 @@ void analysis_overnight(int run_num){
     const int num_overnight_win = int(elapsed_time/RabVar::overnight_win_time) + 1;
 
     //out file
-    TFile *fHist = new TFile(Form("data_hist/RABBIT_%i.root", run_num), "RECREATE");
+    TFile *fHist = new TFile(Form("data_hist/overnight_%i.root", run_num), "RECREATE");
 
     // Histograms
     TH1F *hEnAll[RabVar::num_BEGe+1];
@@ -145,6 +145,6 @@ void analysis_overnight(int run_num){
     }
 
     fHist->Write();
-    fHist->Close();
+    //fHist->Close();
     
 }

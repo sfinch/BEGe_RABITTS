@@ -34,7 +34,7 @@ namespace RabVar{
     
     // analysis_overnight.C
     // Saves histograms every 3600 s (1 hour)
-    const double overnight_win_time =3600; //in sec
+    const double overnight_win_time = 3600; //in sec
 
     ///////////////////////////////////////////////////////////////
     // Hardware configuration

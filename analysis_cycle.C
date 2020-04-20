@@ -5,10 +5,7 @@
 // The time divisions may be changed in RabVar.h
 // ROOT histograms are saved in data_root. After ananlysis_cycle.C has been run, you may
 // use plot_cycle.C to plot the spectra and output the spectra to TKA files
-// Requries running of mvme2root, followed by process_rabbit
-//
-// To run: root -l "analysis_cycle.C(XXX)" where XXX is run number
-// 
+// Requries running of mvme2root, followed by process_rabbit // // To run: root -l "analysis_cycle.C(XXX)" where XXX is run number // 
 //
 ///////////////////////////////////////////////////////////////////////////
 

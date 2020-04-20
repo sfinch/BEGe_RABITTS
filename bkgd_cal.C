@@ -30,6 +30,7 @@ void bkgd_cal(int run_num = 0){
 
     // Set initial ranges for each fit. Will fit the largest ADC peak in the region and
     // calibrate it to the corresponding energy
+    /*
     //185
     energy.push_back(185.72);
     energy_error.push_back(0.02);
@@ -37,6 +38,7 @@ void bkgd_cal(int run_num = 0){
         startrange[i].push_back(175);
         endrange[i].push_back(195);
     }
+    */
 
     //351
     energy.push_back(351.92);
@@ -96,6 +98,7 @@ void bkgd_cal(int run_num = 0){
         endrange[i].push_back(1775);
     }
 
+    /*
     //2204
     energy.push_back(2204.059);
     energy_error.push_back(0.022);
@@ -111,6 +114,7 @@ void bkgd_cal(int run_num = 0){
         startrange[i].push_back(2590);
         endrange[i].push_back(2630);
     }
+    */
 
 
     //variables
