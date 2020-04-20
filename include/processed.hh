@@ -47,12 +47,16 @@ public :
    TBranch        *b_seconds;   //!
 
 
+   processed();
    processed(int run_num);
    virtual ~processed();
    virtual Int_t    GetEntry(Long64_t entry);
    virtual void     Init();
    virtual void     Show(Long64_t entry = -1);
 };
+
+processed::processed(){
+}
 
 processed::processed(int run_num)
 {

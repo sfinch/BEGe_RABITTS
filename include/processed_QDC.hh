@@ -44,12 +44,16 @@ public :
    TBranch        *b_seconds;   //!
    TBranch        *b_time_stamp;   //!
 
+   processed_QDC();
    processed_QDC(int run_num);
    virtual ~processed_QDC();
    virtual Int_t    GetEntry(Long64_t entry);
    virtual void     Init();
    virtual void     Show(Long64_t entry = -1);
 };
+
+processed_QDC::processed_QDC(){
+}
 
 processed_QDC::processed_QDC(int run_num)
 {
