@@ -31,19 +31,26 @@ class correction{
     double dt = 1; 
     double lambda = 1; 
 
-    double corr = 0;
-    double num_events = 0;
+    double activity = 0;
+    double beam_avg = 0;
+    double counts = 0;
     
-    double corr_irr = 0;
-    double num_events_irr = 0;
+    double activity_irr = 0;
+    double beam_avg_irr = 0;
+    double counts_irr = 0;
 
     vector<int> scalers;
     vector<int> scalers_irr;
+    vector<int> counting;
+
+    vector<float> vec_act;
+    vector<float> vec_counts;
 
     correction();
     correction(double l, double t);
     void calc();
     void resize(int length);
+    void plot_hist();
 };
 
 correction::correction(){
@@ -57,33 +64,67 @@ correction::correction(double l, double t){
 void correction::calc(){
 
     for (int i=0; i<scalers.size(); i++){
-        corr += scalers.at(i)*(1-exp(-1*lambda*dt))
-            *exp(-1*lambda*(scalers.size()-i)*dt);
-        num_events += scalers.at(i);
-    }
+        activity = activity*(exp(-1.*lambda*dt))
+                 + scalers.at(i)*(1-exp(-1*lambda*dt));
+        beam_avg += scalers.at(i);
+        counts += counting.at(i)*activity*(1-exp(-1*lambda*dt))/lambda;
 
+        vec_act.push_back(activity);
+        vec_counts.push_back(counts);
+    }
     for (int i=0; i<scalers_irr.size(); i++){
-        corr_irr += scalers_irr.at(i)*(1-exp(-1*lambda*dt))
-            *exp(-1*lambda*(scalers_irr.size()-i)*dt);
-        num_events_irr += scalers_irr.at(i);
+        activity_irr = activity_irr*(exp(-1.*lambda*dt))
+                 + scalers_irr.at(i)*(1-exp(-1*lambda*dt));
+        beam_avg_irr += scalers_irr.at(i);
+        counts_irr += counting.at(i)*activity_irr*(1-exp(-1*lambda*dt))/lambda;
     }
 
-    corr = corr*scalers.size()/num_events;
-    corr_irr = corr_irr*scalers.size()/num_events_irr;
+    beam_avg = beam_avg/scalers.size();
+    beam_avg_irr = beam_avg_irr/scalers.size();
+
+    counts = counts/beam_avg;
+    counts_irr = counts_irr/beam_avg;
+
 };
 
 void correction::resize(int length){
     scalers.resize(length, 0);
     scalers_irr.resize(length, 0);
+    counting.resize(length, 0);
 }
 
-void beam_corr(int run_num, int run_num2 = 0){
+void correction::plot_hist(){
+    TH1F *hAct = new TH1F("hAct", "Target activity", scalers.size(), 0, scalers.size()*dt);
+    TH1F *hCounts = new TH1F("hCounts", "Integral counts in detector", scalers.size(), 0, scalers.size()*dt);
+    TH1F *hCounting = new TH1F("hCounting", "hCounting", scalers.size(), 0, scalers.size()*dt);
+    for (int i=0; i<scalers.size(); i++){
+        hAct->SetBinContent(i, vec_act.at(i)/beam_avg);
+        hCounts->SetBinContent(i, vec_counts.at(i)/beam_avg);
+        //hCounting->SetBinContent(i, counting.at(i));
+        hCounting->SetBinContent(i, counting.at(i)*vec_act.at(i)/beam_avg);
+    }
+    TCanvas *c1 = new TCanvas("c1", "c1", 800, 800);
+    c1->Divide(1,2);
+
+    c1->cd(1);
+    hCounting->SetFillColor(4);
+    hAct->GetXaxis()->SetTitle("Time (s)");
+    hAct->Draw();
+    hCounting->Draw("same");
+
+    c1->cd(2);
+    hCounts->Draw();
+    hCounts->GetXaxis()->SetTitle("Time (s)");
+
+}
+
+void cyclic_corr(int run_num, int run_num2 = 0){
 
     gROOT->SetStyle("Plain");
     gStyle->SetOptStat(0);
 
     //Variables
-    double half_life = 2.66*3600;
+    double half_life = 10;
     double lambda = 0.69314718/half_life;
     double dt = 0.10;
 
@@ -96,6 +137,10 @@ void beam_corr(int run_num, int run_num2 = 0){
     double SCP_time[num_runs];
     double QDC_time[num_runs];
     double total_time;
+
+    int num_cycles[num_runs];
+    int total_cycles = 0;
+    double cycleT = RabVar::irr_time + RabVar::count_time + 2*RabVar::transit_time;
 
     double DC_corr = 0;
     int numTbins = 0;
@@ -121,6 +166,9 @@ void beam_corr(int run_num, int run_num2 = 0){
         tStart[i] = TDatime(rabbit[i]->rawfile->Get("start_time")->GetTitle());
         tStop[i] = TDatime(rabbit[i]->rawfile->Get("stop_time")->GetTitle());
         elapsed_time[i] = tStop[i].Convert() - tStart[i].Convert();
+
+        num_cycles[i] = ((TH1F*)rabbit[i]->file->Get("histos/hIrrTime"))->Integral();
+        total_cycles += num_cycles[i];
     }
     total_time = tStop[num_runs-1].Convert() - tStart[0].Convert();
 
@@ -136,6 +184,7 @@ void beam_corr(int run_num, int run_num2 = 0){
         cout << "Run " << run+run_num << " stop:         " << tStop[run].AsString() << endl;
         cout << "Run " << run+run_num << " elapsed time: " 
              << elapsed_time[run] << " s, " << elapsed_time[run]/3600. << " h" << endl;
+        cout << "Run " << run+run_num << " num cycles:   " << num_cycles[run] << endl;
         cout << "------------------------------------------------------" << endl;
         
         startOffset = tStart[run].Convert() - tStart[0].Convert();
@@ -165,6 +214,13 @@ void beam_corr(int run_num, int run_num2 = 0){
 
                     corr_BCI.scalers_irr.at(int((startOffset + rabbit[run]->seconds)/dt))++;
                 }
+            }
+            if ((rabbit[run]->cycle_time > RabVar::time_count[0])
+                &&(rabbit[run]->cycle_time < RabVar::time_count[1])){
+
+                corr_BCI.counting.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
+                corr_nmon.counting.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
+                corr_nPSD.counting.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
             }
         } //end loop over SCP
         cout << '\r' << nentries << " total SCP events" << endl;
@@ -224,15 +280,25 @@ void beam_corr(int run_num, int run_num2 = 0){
     fclose(file_ptr);
 
     //calculate corrections
-    DC_corr = (1-exp(-1*lambda*total_time));
+
+    DC_corr = (1/lambda)
+             *(1-exp(-1.*lambda*RabVar::irr_time))
+             *exp(-1.*lambda*RabVar::transit_time)
+             *(1-exp(-1.*lambda*RabVar::count_time))
+             *((total_cycles/(1-exp(-1.*lambda*cycleT))) 
+              - (exp(-1.*lambda*cycleT)*(1-exp(-1.*total_cycles*lambda*cycleT))
+                 /pow((1-exp(-1.*lambda*cycleT)),2)));
     corr_BCI.calc();
     corr_nmon.calc();
     corr_nPSD.calc();
+
+    corr_BCI.plot_hist();
 
     //print corrections
     cout << "------------------------------------------------------" << endl;
     cout << "Total start:    " << tStart[0].AsString() << endl;
     cout << "Total stop:     " << tStop[num_runs-1].AsString() << endl;
+    cout << "Total cycles:   " << total_cycles << endl;
     cout << "Elapsed time:   " << total_time/3600. << " h" << endl;
     cout << "------------------------------------------------------" << endl;
     cout.precision(5);
@@ -240,18 +306,18 @@ void beam_corr(int run_num, int run_num2 = 0){
     cout << "Assuming DC beam:       "  << DC_corr
          << "\t\t" << DC_corr/DC_corr << endl;
 
-    cout << "n-mon:                  "  << corr_nmon.corr
-         << "\t\t" << corr_nmon.corr/DC_corr << endl;
-    cout << "n-mon with PSD cut:     "  << corr_nPSD.corr
-         << "\t\t" << corr_nPSD.corr/DC_corr << endl;
-    cout << "BCI:                    "  << corr_BCI.corr
-         << "\t\t" << corr_BCI.corr/DC_corr << endl;
+    cout << "n-mon:                  "  << corr_nmon.counts
+         << "\t\t" << corr_nmon.counts/DC_corr << endl;
+    cout << "n-mon with PSD cut:     "  << corr_nPSD.counts
+         << "\t\t" << corr_nPSD.counts/DC_corr << endl;
+    cout << "BCI:                    "  << corr_BCI.counts
+         << "\t\t" << corr_BCI.counts/DC_corr << endl;
 
-    cout << "n-mon irradiation only: "  << corr_nmon.corr_irr
-         << "\t\t" << corr_nmon.corr_irr/DC_corr << endl;
-    cout << "n-mon w/ PSD irr only:  "  << corr_nPSD.corr_irr
-         << "\t\t" << corr_nPSD.corr_irr/DC_corr << endl;
-    cout << "BCI irradiation only:   "  << corr_BCI.corr_irr
-         << "\t\t" << corr_BCI.corr_irr/DC_corr << endl;
+    cout << "n-mon irradiation only: "  << corr_nmon.counts_irr
+         << "\t\t" << corr_nmon.counts_irr/DC_corr << endl;
+    cout << "n-mon w/ PSD irr only:  "  << corr_nPSD.counts_irr
+         << "\t\t" << corr_nPSD.counts_irr/DC_corr << endl;
+    cout << "BCI irradiation only:   "  << corr_BCI.counts_irr
+         << "\t\t" << corr_BCI.counts_irr/DC_corr << endl;
 
 }
