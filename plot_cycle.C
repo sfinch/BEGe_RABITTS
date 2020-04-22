@@ -91,8 +91,6 @@ void plot_cycle(int run_num, int run_num2 = 0){
             hEnIrr[RabVar::num_BEGe]->Add((TH1F*) fHist->Get(Form("hEn_Irr_Det%i", i)));
         }
 
-    //get histos
-
         fHist->Close();
         delete fHist;
     }

@@ -41,20 +41,20 @@ class correction{
     vector<int> scalers_irr;
 
     correction();
-    correction(double l, double t);
-    void calc();
+    correction(double t);
+    void calc(double l);
     void resize(int length);
 };
 
 correction::correction(){
 }
 
-correction::correction(double l, double t){
+correction::correction(double t){
     dt = t;
-    lambda = l;
 };
 
-void correction::calc(){
+void correction::calc(double l){
+    lambda = l;
 
     for (int i=0; i<scalers.size(); i++){
         corr += scalers.at(i)*(1-exp(-1*lambda*dt))
@@ -107,9 +107,9 @@ void beam_corr(int run_num, int run_num2 = 0){
     Long64_t nentries;
     Long64_t nbytes = 0, nb = 0;
 
-    correction corr_BCI(lambda, dt);
-    correction corr_nmon(lambda, dt);
-    correction corr_nPSD(lambda, dt);
+    correction corr_BCI(dt);
+    correction corr_nmon(dt);
+    correction corr_nPSD(dt);
 
     //in file
     processed *rabbit[num_runs];
@@ -225,9 +225,9 @@ void beam_corr(int run_num, int run_num2 = 0){
 
     //calculate corrections
     DC_corr = (1-exp(-1*lambda*total_time));
-    corr_BCI.calc();
-    corr_nmon.calc();
-    corr_nPSD.calc();
+    corr_BCI.calc(lambda);
+    corr_nmon.calc(lambda);
+    corr_nPSD.calc(lambda);
 
     //print corrections
     cout << "------------------------------------------------------" << endl;

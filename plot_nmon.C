@@ -19,6 +19,7 @@ using std::endl;
 
 #include <TStyle.h>
 #include <TCanvas.h>
+#include <TStyle.h>
 
 #include "include/processed.hh"
 #include "include/processed_QDC.hh"
@@ -123,7 +124,7 @@ void plot_nmon(int run_num){
 
         for (int j=0; j<5; j++){
             lIrr[i][j]->SetLineColor(2);
-            lIrr[i][j]->SetLineWidth(2);
+            lIrr[i][j]->SetLineWidth(3);
             lIrr[i][j]->SetLineStyle(2);
 
             lCount[i][j]->SetLineColor(4);
@@ -136,7 +137,24 @@ void plot_nmon(int run_num){
     TCanvas *cCycle = new TCanvas("cCycle", "Cycle time counts", 800, 1000);
     cCycle->Divide(1,5);
 
+
+    for (int j=0; j<5; j++){
+        cCycle->cd(j+1);
+        gPad->SetLeftMargin(0.15);
+        gPad->SetRightMargin(0.02);
+        gPad->SetBottomMargin(0.20);
+        gPad->SetTopMargin(0.05);
+    }
+
     cCycle->cd(1);
+    hCycBCI->SetLineWidth(2);
+    hCycBCI->SetTitleSize(1.);
+    hCycBCI->GetXaxis()->SetTitle("Cycle time [s]");
+    hCycBCI->GetYaxis()->SetTitle("Counts");
+    hCycBCI->GetXaxis()->SetTitleSize(0.1);
+    hCycBCI->GetYaxis()->SetTitleSize(0.1);
+    hCycBCI->GetXaxis()->SetLabelSize(0.08);
+    hCycBCI->GetYaxis()->SetLabelSize(0.08);
     hCycBCI->Draw();
     gPad->SetLogy();
     for (int i=0; i<2; i++){
@@ -145,6 +163,12 @@ void plot_nmon(int run_num){
     }
 
     cCycle->cd(2);
+    hCycNmon->GetXaxis()->SetTitle("Cycle time [s]");
+    hCycNmon->GetYaxis()->SetTitle("Counts");
+    hCycNmon->GetXaxis()->SetTitleSize(0.1);
+    hCycNmon->GetYaxis()->SetTitleSize(0.1);
+    hCycNmon->GetXaxis()->SetLabelSize(0.08);
+    hCycNmon->GetYaxis()->SetLabelSize(0.08);
     hCycNmon->Draw();
     hCycNPSD->Draw("same");
     gPad->SetLogy();
@@ -154,6 +178,12 @@ void plot_nmon(int run_num){
     }
 
     cCycle->cd(3);
+    hCycFC[0]->GetXaxis()->SetTitle("Cycle time [s]");
+    hCycFC[0]->GetYaxis()->SetTitle("Counts");
+    hCycFC[0]->GetXaxis()->SetTitleSize(0.1);
+    hCycFC[0]->GetYaxis()->SetTitleSize(0.1);
+    hCycFC[0]->GetXaxis()->SetLabelSize(0.08);
+    hCycFC[0]->GetYaxis()->SetLabelSize(0.08);
     hCycFC[0]->Draw();
     for (int i=0; i<2; i++){
         lIrr[i][2]->Draw("same");
@@ -161,6 +191,12 @@ void plot_nmon(int run_num){
     }
 
     cCycle->cd(4);
+    hCycFC[1]->GetXaxis()->SetTitle("Cycle time [s]");
+    hCycFC[1]->GetYaxis()->SetTitle("Counts");
+    hCycFC[1]->GetXaxis()->SetTitleSize(0.1);
+    hCycFC[1]->GetYaxis()->SetTitleSize(0.1);
+    hCycFC[1]->GetXaxis()->SetLabelSize(0.08);
+    hCycFC[1]->GetYaxis()->SetLabelSize(0.08);
     hCycFC[1]->Draw();
     for (int i=0; i<2; i++){
         lIrr[i][3]->Draw("same");
@@ -169,6 +205,12 @@ void plot_nmon(int run_num){
 
     cCycle->cd(5);
     for (int i=0; i<RabVar::num_BEGe; i++){
+        hHPGe[i]->GetXaxis()->SetTitle("Cycle time [s]");
+        hHPGe[i]->GetYaxis()->SetTitle("Counts");
+        hHPGe[i]->GetXaxis()->SetTitleSize(0.1);
+        hHPGe[i]->GetYaxis()->SetTitleSize(0.1);
+        hHPGe[i]->GetXaxis()->SetLabelSize(0.08);
+        hHPGe[i]->GetYaxis()->SetLabelSize(0.08);
         hHPGe[i]->SetLineColor(1+i);
         hHPGe[i]->Draw("same");
     }

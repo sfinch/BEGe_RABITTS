@@ -42,26 +42,29 @@ class correction{
     vector<int> scalers;
     vector<int> scalers_irr;
     vector<int> counting;
+    vector<int> irradiation;
 
     vector<float> vec_act;
     vector<float> vec_counts;
 
     correction();
-    correction(double l, double t);
-    void calc();
+    correction(double t);
+    void calc(double l);
     void resize(int length);
     void plot_hist();
+    void print();
 };
 
 correction::correction(){
 }
 
-correction::correction(double l, double t){
+correction::correction(double t){
     dt = t;
-    lambda = l;
 };
 
-void correction::calc(){
+void correction::calc(double l){
+    lambda = l;
+    int num_beam_events = 0;
 
     for (int i=0; i<scalers.size(); i++){
         activity = activity*(exp(-1.*lambda*dt))
@@ -69,21 +72,30 @@ void correction::calc(){
         beam_avg += scalers.at(i);
         counts += counting.at(i)*activity*(1-exp(-1*lambda*dt))/lambda;
 
+        if (irradiation.at(i)){
+            num_beam_events++;
+        }
+
         vec_act.push_back(activity);
         vec_counts.push_back(counts);
     }
+    beam_avg = beam_avg/num_beam_events;
+
+    num_beam_events = 0;
     for (int i=0; i<scalers_irr.size(); i++){
         activity_irr = activity_irr*(exp(-1.*lambda*dt))
                  + scalers_irr.at(i)*(1-exp(-1*lambda*dt));
         beam_avg_irr += scalers_irr.at(i);
         counts_irr += counting.at(i)*activity_irr*(1-exp(-1*lambda*dt))/lambda;
+        
+        if (irradiation.at(i)){
+            num_beam_events++;
+        }
     }
-
-    beam_avg = beam_avg/scalers.size();
-    beam_avg_irr = beam_avg_irr/scalers.size();
+    beam_avg_irr = beam_avg_irr/num_beam_events;
 
     counts = counts/beam_avg;
-    counts_irr = counts_irr/beam_avg;
+    counts_irr = counts_irr/beam_avg_irr;
 
 };
 
@@ -91,31 +103,44 @@ void correction::resize(int length){
     scalers.resize(length, 0);
     scalers_irr.resize(length, 0);
     counting.resize(length, 0);
+    irradiation.resize(length, 0);
 }
 
-void correction::plot_hist(){
+void correction::plot_hist()
+{
     TH1F *hAct = new TH1F("hAct", "Target activity", scalers.size(), 0, scalers.size()*dt);
-    TH1F *hCounts = new TH1F("hCounts", "Integral counts in detector", scalers.size(), 0, scalers.size()*dt);
+    TH1F *hCounts = new TH1F("hCounts", "Decays in detector", scalers.size(), 0, scalers.size()*dt);
     TH1F *hCounting = new TH1F("hCounting", "hCounting", scalers.size(), 0, scalers.size()*dt);
+    TH1F *hIrr = new TH1F("hIrr", "hIrr", scalers.size(), 0, scalers.size()*dt);
+
     for (int i=0; i<scalers.size(); i++){
         hAct->SetBinContent(i, vec_act.at(i)/beam_avg);
         hCounts->SetBinContent(i, vec_counts.at(i)/beam_avg);
-        //hCounting->SetBinContent(i, counting.at(i));
         hCounting->SetBinContent(i, counting.at(i)*vec_act.at(i)/beam_avg);
+        hIrr->SetBinContent(i, irradiation.at(i)*vec_act.at(i)/beam_avg);
     }
     TCanvas *c1 = new TCanvas("c1", "c1", 800, 800);
     c1->Divide(1,2);
 
     c1->cd(1);
-    hCounting->SetFillColor(4);
     hAct->GetXaxis()->SetTitle("Time (s)");
+    hAct->SetLineWidth(2);
     hAct->Draw();
+
+    hCounting->SetFillColor(4);
     hCounting->Draw("same");
 
+    hIrr->SetFillColor(2);
+    hIrr->Draw("same");
+
     c1->cd(2);
+    hCounts->SetLineWidth(2);
     hCounts->Draw();
     hCounts->GetXaxis()->SetTitle("Time (s)");
 
+}
+
+void correction::print(){
 }
 
 void cyclic_corr(int run_num, int run_num2 = 0){
@@ -125,6 +150,7 @@ void cyclic_corr(int run_num, int run_num2 = 0){
 
     //Variables
     double half_life = 10;
+    //double half_life = 2.66*3600;
     double lambda = 0.69314718/half_life;
     double dt = 0.10;
 
@@ -152,9 +178,9 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     Long64_t nentries;
     Long64_t nbytes = 0, nb = 0;
 
-    correction corr_BCI(lambda, dt);
-    correction corr_nmon(lambda, dt);
-    correction corr_nPSD(lambda, dt);
+    correction corr_BCI(dt);
+    correction corr_nmon(dt);
+    correction corr_nPSD(dt);
 
     //in file
     processed *rabbit[num_runs];
@@ -222,6 +248,13 @@ void cyclic_corr(int run_num, int run_num2 = 0){
                 corr_nmon.counting.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
                 corr_nPSD.counting.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
             }
+            else if ((rabbit[run]->cycle_time > RabVar::time_irr[0])
+                &&(rabbit[run]->cycle_time < RabVar::time_irr[1])){
+
+                corr_BCI.irradiation.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
+                corr_nmon.irradiation.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
+                corr_nPSD.irradiation.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
+            }
         } //end loop over SCP
         cout << '\r' << nentries << " total SCP events" << endl;
         cout << SCP_time[run] << " s SCP time" << endl;
@@ -264,6 +297,21 @@ void cyclic_corr(int run_num, int run_num2 = 0){
                     }
                 }
             }
+
+            if ((rabbit_QDC[run]->cycle_time > RabVar::time_count[0])
+                &&(rabbit_QDC[run]->cycle_time < RabVar::time_count[1])){
+
+                corr_BCI.counting.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
+                corr_nmon.counting.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
+                corr_nPSD.counting.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
+            }
+            else if ((rabbit_QDC[run]->cycle_time > RabVar::time_irr[0])
+                &&(rabbit_QDC[run]->cycle_time < RabVar::time_irr[1])){
+
+                corr_BCI.irradiation.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
+                corr_nmon.irradiation.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
+                corr_nPSD.irradiation.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
+            }
         } //end loop over QDC
         cout << '\r' << nentries << " total QDC events" << endl;
         cout << QDC_time[run] << " s QDC time" << endl;
@@ -288,9 +336,9 @@ void cyclic_corr(int run_num, int run_num2 = 0){
              *((total_cycles/(1-exp(-1.*lambda*cycleT))) 
               - (exp(-1.*lambda*cycleT)*(1-exp(-1.*total_cycles*lambda*cycleT))
                  /pow((1-exp(-1.*lambda*cycleT)),2)));
-    corr_BCI.calc();
-    corr_nmon.calc();
-    corr_nPSD.calc();
+    corr_BCI.calc(lambda);
+    corr_nmon.calc(lambda);
+    corr_nPSD.calc(lambda);
 
     corr_BCI.plot_hist();
 
