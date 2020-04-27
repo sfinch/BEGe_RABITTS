@@ -39,10 +39,13 @@ class correction{
     double beam_avg_irr = 0;
     double counts_irr = 0;
 
+    double DC_corr = 0;
+    int total_cycles = 0;
+
     vector<int> scalers;
     vector<int> scalers_irr;
-    vector<int> counting;
-    vector<int> irradiation;
+    vector<bool> counting;
+    vector<bool> irradiation;
 
     vector<float> vec_act;
     vector<float> vec_counts;
@@ -50,6 +53,7 @@ class correction{
     correction();
     correction(double t);
     void calc(double l);
+    void DCcalc(double l);
     void resize(int length);
     void plot_hist();
     void print();
@@ -62,10 +66,32 @@ correction::correction(double t){
     dt = t;
 };
 
-void correction::calc(double l){
+void correction::DCcalc(double l){
     lambda = l;
+
+    double cycleT = RabVar::irr_time + RabVar::count_time + 2*RabVar::transit_time;
+    DC_corr = (1/lambda)
+             *(1-exp(-1.*lambda*RabVar::irr_time))
+             *exp(-1.*lambda*RabVar::transit_time)
+             *(1-exp(-1.*lambda*RabVar::count_time))
+             *((total_cycles/(1-exp(-1.*lambda*cycleT))) 
+              - (exp(-1.*lambda*cycleT)*(1-exp(-1.*total_cycles*lambda*cycleT))
+                 /pow((1-exp(-1.*lambda*cycleT)),2)));
+
+};
+
+void correction::calc(double l){
+    
+    lambda = l;
+    DCcalc(lambda);
     int num_beam_events = 0;
 
+    num_beam_events = 0;
+    activity = 0;
+    beam_avg = 0;
+    counts = 0;
+    vec_act.resize(0);
+    vec_counts.resize(0);
     for (int i=0; i<scalers.size(); i++){
         activity = activity*(exp(-1.*lambda*dt))
                  + scalers.at(i)*(1-exp(-1*lambda*dt));
@@ -82,6 +108,9 @@ void correction::calc(double l){
     beam_avg = beam_avg/num_beam_events;
 
     num_beam_events = 0;
+    activity_irr = 0;
+    beam_avg_irr = 0;
+    counts_irr = 0;
     for (int i=0; i<scalers_irr.size(); i++){
         activity_irr = activity_irr*(exp(-1.*lambda*dt))
                  + scalers_irr.at(i)*(1-exp(-1*lambda*dt));
@@ -141,6 +170,10 @@ void correction::plot_hist()
 }
 
 void correction::print(){
+    cout << "Full rate:              "  << counts
+         << "\t\t" << counts/DC_corr << endl;
+    cout << "Irradiation only:       "  << counts_irr
+         << "\t\t" << counts_irr/DC_corr << endl;
 }
 
 void cyclic_corr(int run_num, int run_num2 = 0){
@@ -152,7 +185,7 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     double half_life = 10;
     //double half_life = 2.66*3600;
     double lambda = 0.69314718/half_life;
-    double dt = 0.10;
+    double dt = 0.010;
 
     if (run_num2 < run_num){
         run_num2 = run_num;
@@ -166,9 +199,7 @@ void cyclic_corr(int run_num, int run_num2 = 0){
 
     int num_cycles[num_runs];
     int total_cycles = 0;
-    double cycleT = RabVar::irr_time + RabVar::count_time + 2*RabVar::transit_time;
 
-    double DC_corr = 0;
     int numTbins = 0;
     int startOffset = 0;
 
@@ -202,6 +233,9 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     corr_BCI.resize(numTbins);
     corr_nmon.resize(numTbins);
     corr_nPSD.resize(numTbins);
+    corr_BCI.total_cycles = total_cycles;
+    corr_nmon.total_cycles = total_cycles;
+    corr_nPSD.total_cycles = total_cycles;
 
     //loop over runs
     for (int run=0; run<num_runs; run++){
@@ -329,13 +363,6 @@ void cyclic_corr(int run_num, int run_num2 = 0){
 
     //calculate corrections
 
-    DC_corr = (1/lambda)
-             *(1-exp(-1.*lambda*RabVar::irr_time))
-             *exp(-1.*lambda*RabVar::transit_time)
-             *(1-exp(-1.*lambda*RabVar::count_time))
-             *((total_cycles/(1-exp(-1.*lambda*cycleT))) 
-              - (exp(-1.*lambda*cycleT)*(1-exp(-1.*total_cycles*lambda*cycleT))
-                 /pow((1-exp(-1.*lambda*cycleT)),2)));
     corr_BCI.calc(lambda);
     corr_nmon.calc(lambda);
     corr_nPSD.calc(lambda);
@@ -351,21 +378,15 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     cout << "------------------------------------------------------" << endl;
     cout.precision(5);
     cout << "\t\t\t" << "Produced \tCorrection %" << endl;
-    cout << "Assuming DC beam:       "  << DC_corr
-         << "\t\t" << DC_corr/DC_corr << endl;
+    cout << "Assuming DC beam:       "  << corr_BCI.DC_corr
+         << "\t\t" << corr_BCI.DC_corr/corr_BCI.DC_corr << endl;
 
-    cout << "n-mon:                  "  << corr_nmon.counts
-         << "\t\t" << corr_nmon.counts/DC_corr << endl;
-    cout << "n-mon with PSD cut:     "  << corr_nPSD.counts
-         << "\t\t" << corr_nPSD.counts/DC_corr << endl;
-    cout << "BCI:                    "  << corr_BCI.counts
-         << "\t\t" << corr_BCI.counts/DC_corr << endl;
+    cout << "--- BCI ---"  << endl;
+    corr_BCI.print();
+    cout << "--- n-mon ---"  << endl;
+    corr_nmon.print();
+    cout << "--- n-mon with PSD cut ---"  << endl;
+    corr_nPSD.print();
 
-    cout << "n-mon irradiation only: "  << corr_nmon.counts_irr
-         << "\t\t" << corr_nmon.counts_irr/DC_corr << endl;
-    cout << "n-mon w/ PSD irr only:  "  << corr_nPSD.counts_irr
-         << "\t\t" << corr_nPSD.counts_irr/DC_corr << endl;
-    cout << "BCI irradiation only:   "  << corr_BCI.counts_irr
-         << "\t\t" << corr_BCI.counts_irr/DC_corr << endl;
 
 }
