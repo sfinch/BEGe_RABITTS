@@ -24,6 +24,9 @@ public :
    TFile          *file;
    TFile          *rawfile;
 
+   TVectorT<double> *irr_start_times;
+   TVectorT<double> *count_start_times;
+
    // Declaration of leaf types
    Float_t         En[RabVar::num_det];
    Float_t         cycle_time;
@@ -45,7 +48,6 @@ public :
    TBranch        *b_pileup;   //!
    TBranch        *b_time_stamp;   //!
    TBranch        *b_seconds;   //!
-
 
    processed();
    processed(int run_num);
@@ -76,6 +78,9 @@ processed::processed(int run_num)
       fChain->AddFriend("MDPP16_SCP", Form("data_root/RABITTS_%i.root", run_num));
       rawfile = new TFile(Form("data_root/RABITTS_%i.root", run_num));
    }
+
+   irr_start_times = (TVectorT<double> *)file->Get("irr_start_times");
+   count_start_times = (TVectorT<double> *)file->Get("count_start_times");
 
    Init();
 }

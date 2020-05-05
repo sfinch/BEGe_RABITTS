@@ -52,9 +52,11 @@ class correction{
 
     correction();
     correction(double t);
+
+    void resize(int length);
     void calc(double l);
     void DCcalc(double l);
-    void resize(int length);
+    void write_scalers(char* filename);
     void plot_hist();
     void print();
 };
@@ -169,6 +171,17 @@ void correction::plot_hist()
 
 }
 
+void correction::write_scalers(char* filename){
+    //output scalers to file
+    FILE *file_ptr = fopen(filename, "w");
+    for (int i=0; i<scalers.size(); i++){
+        fprintf(file_ptr, "%i\t", i);
+        fprintf(file_ptr, "%f\t", i*dt);
+        fprintf(file_ptr, "%i\t", scalers.at(i));
+    }
+    fclose(file_ptr);
+}
+
 void correction::print(){
     cout << "Full rate:              "  << counts
          << "\t\t" << counts/DC_corr << endl;
@@ -185,7 +198,7 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     double half_life = 10;
     //double half_life = 2.66*3600;
     double lambda = 0.69314718/half_life;
-    double dt = 0.010;
+    double dt = 0.01;
 
     if (run_num2 < run_num){
         run_num2 = run_num;
@@ -203,8 +216,14 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     int numTbins = 0;
     int startOffset = 0;
 
+    int irr_length = RabVar::irr_time/dt;
+    int count_length = RabVar::count_time/dt;
+    int tbin = 0;
+    double maxT = 0;
+
     TDatime tStart[num_runs];
     TDatime tStop[num_runs];
+    vector<double> irr_start;
 
     Long64_t nentries;
     Long64_t nbytes = 0, nb = 0;
@@ -275,20 +294,6 @@ void cyclic_corr(int run_num, int run_num2 = 0){
                     corr_BCI.scalers_irr.at(int((startOffset + rabbit[run]->seconds)/dt))++;
                 }
             }
-            if ((rabbit[run]->cycle_time > RabVar::time_count[0])
-                &&(rabbit[run]->cycle_time < RabVar::time_count[1])){
-
-                corr_BCI.counting.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
-                corr_nmon.counting.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
-                corr_nPSD.counting.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
-            }
-            else if ((rabbit[run]->cycle_time > RabVar::time_irr[0])
-                &&(rabbit[run]->cycle_time < RabVar::time_irr[1])){
-
-                corr_BCI.irradiation.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
-                corr_nmon.irradiation.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
-                corr_nPSD.irradiation.at(int((startOffset + rabbit[run]->seconds)/dt)) = 1;
-            }
         } //end loop over SCP
         cout << '\r' << nentries << " total SCP events" << endl;
         cout << SCP_time[run] << " s SCP time" << endl;
@@ -332,37 +337,54 @@ void cyclic_corr(int run_num, int run_num2 = 0){
                 }
             }
 
-            if ((rabbit_QDC[run]->cycle_time > RabVar::time_count[0])
-                &&(rabbit_QDC[run]->cycle_time < RabVar::time_count[1])){
-
-                corr_BCI.counting.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
-                corr_nmon.counting.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
-                corr_nPSD.counting.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
-            }
-            else if ((rabbit_QDC[run]->cycle_time > RabVar::time_irr[0])
-                &&(rabbit_QDC[run]->cycle_time < RabVar::time_irr[1])){
-
-                corr_BCI.irradiation.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
-                corr_nmon.irradiation.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
-                corr_nPSD.irradiation.at(int((startOffset + rabbit_QDC[run]->seconds)/dt)) = 1;
-            }
         } //end loop over QDC
         cout << '\r' << nentries << " total QDC events" << endl;
         cout << QDC_time[run] << " s QDC time" << endl;
+        
+        maxT = SCP_time[run];
+        if (QDC_time[run] > maxT){
+            maxT = QDC_time[run];
+        }
+
+        irr_start.resize(0);
+        for (int ncycle=0; ncycle<rabbit[run]->irr_start_times->GetNoElements(); ncycle++){
+            irr_start.push_back( ( (*rabbit[run]->irr_start_times) )[ncycle] );
+        }
+
+        for (int ncycle=0; ncycle<irr_start.size(); ncycle++){
+            tbin = (irr_start.at(ncycle) + RabVar::time_irr[0])/dt;
+            for (int t=0; t<irr_length; t++){
+                if (tbin+t < maxT/dt){
+                    corr_BCI.irradiation.at((startOffset/dt) + tbin + t) = 1;
+                    corr_nmon.irradiation.at((startOffset/dt) + tbin + t) = 1;
+                    corr_nPSD.irradiation.at((startOffset/dt) + tbin + t) = 1;
+                }
+            }
+
+            tbin = (irr_start.at(ncycle) + RabVar::time_count[0])/dt;
+            for (int t=0; t<count_length; t++){
+                if (tbin+t < maxT/dt){
+                    corr_BCI.counting.at((startOffset/dt) + tbin + t) = 1;
+                    corr_nmon.counting.at((startOffset/dt) + tbin + t) = 1;
+                    corr_nPSD.counting.at((startOffset/dt) + tbin + t) = 1;
+                }
+            }
+        }
+
     } //end loop over runs
 
-    //output scalers to file
-    FILE *file_ptr = fopen(Form("datafiles/run%i.scalers", run_num), "w");
-    for (int i=0; i<corr_nmon.scalers.size(); i++){
-        fprintf(file_ptr, "%i\t", i);
-        fprintf(file_ptr, "%f\t", i*dt);
-        fprintf(file_ptr, "%i\t", corr_BCI.scalers.at(i));
-        fprintf(file_ptr, "%i\n", corr_nmon.scalers.at(i));
+    if (num_runs == 1){
+        corr_BCI.write_scalers(Form("datafiles/run%i.scalers", run_num));
+        corr_nmon.write_scalers(Form("datafiles/run%i.scalers", run_num));
+        corr_nPSD.write_scalers(Form("datafiles/run%i.scalers", run_num));
     }
-    fclose(file_ptr);
+    else{
+        corr_BCI.write_scalers(Form("datafiles/runs%i-%i.scalers", run_num, run_num2));
+        corr_nmon.write_scalers(Form("datafiles/runs%i-%i.scalers", run_num, run_num2));
+        corr_nPSD.write_scalers(Form("datafiles/runs%i-%i.scalers", run_num, run_num2));
+    }
 
     //calculate corrections
-
     corr_BCI.calc(lambda);
     corr_nmon.calc(lambda);
     corr_nPSD.calc(lambda);

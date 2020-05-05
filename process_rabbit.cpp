@@ -19,6 +19,7 @@
 #include <TH1.h>
 #include <TCanvas.h>
 #include <TRandom3.h>
+#include <TVectorD.h>
 
 #include "RabVar.hh"
 #include "MDPP16_SCP.hh"
@@ -443,6 +444,12 @@ int process_rabbit(int run_num, bool opt_verbose){
     for (int det=0; det<RabVar::num_det; det++){
         hEn[det]->Write();
     }
+
+    fOut->cd();
+    TVectorT<double> irr_start_times(irr_start.size(), &irr_start[0]);
+    TVectorT<double> count_start_times(count_start.size(), &count_start[0]);
+    irr_start_times.Write("irr_start_times");
+    count_start_times.Write("count_start_times");
 
     fOut->Close();
     return 0;
