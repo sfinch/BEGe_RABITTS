@@ -146,8 +146,8 @@ double correction::calc_DCcyclic(double l){
 
 void correction::calc_cyclic(double l){
     
+    calc_DCcyclic(l);
     lambda = l;
-    calc_DCcyclic(lambda);
 
     int num_beam_events = 0;
     activity = 0;
@@ -192,9 +192,11 @@ void correction::calc_cyclic(double l){
 }
 
 void correction::calc_cyclic(double l, double l2){
+
+    calc_DCcyclic(l2);
+
     lambda = l;
     lambda2 = l2;
-    calc_DCcyclic(lambda2);
 
     vec_act.resize(0);
     vec_counts.resize(0);
@@ -253,11 +255,12 @@ void correction::calc_cyclic(double l, double l2){
 }
 
 void correction::calc_cyclic(double l, double l2, double l3){
+
+    calc_DCcyclic(l3);
+
     lambda = l;
     lambda2 = l2;
     lambda3 = l3;
-
-    calc_DCcyclic(lambda3);
 
     int num_beam_events = 0;
     activity = 0;
@@ -601,7 +604,7 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     corr_nmon.calc_activation(lambda);
     corr_nPSD.calc_activation(lambda);
 
-    half_life = .1;
+    half_life = 5.0;
     lambda = 0.69314718/half_life;
     double half_life2 = 10;
     double lambda2 = 0.69314718/half_life2;
@@ -609,6 +612,9 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     corr_BCI.calc_cyclic(lambda, lambda2);
     corr_nmon.calc_cyclic(lambda, lambda2);
     corr_nPSD.calc_cyclic(lambda, lambda2);
+    //corr_BCI.calc_cyclic(lambda2);
+    //corr_nmon.calc_cyclic(lambda2);
+    //corr_nPSD.calc_cyclic(lambda2);
 
     corr_BCI.plot_hist();
 
