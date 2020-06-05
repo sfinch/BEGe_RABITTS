@@ -16,8 +16,13 @@ namespace RabVar{
     // Cycle time variables
     // Values in seconds
     ///////////////////////////////////////////////////////////////
+
     const double irr_time = 10;
     const double count_time = 60;
+
+    //const double irr_time = 4;
+    //const double count_time = 20;
+
     const double transit_time = 1.05;
     
     ///////////////////////////////////////////////////////////////

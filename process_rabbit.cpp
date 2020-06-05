@@ -368,8 +368,9 @@ int process_rabbit(int run_num, bool opt_verbose){
                 En[det] = (rabbit.ADC[RabVar::det_chn[det]]+r.Rndm()-0.5)
                         * ( (*rabbit.m) )[RabVar::det_chn[det]] 
                         + ( (*rabbit.b) )[RabVar::det_chn[det]];
-                En[det] = int(100*(En[det]*cal.m[det] + cal.b[det]));
-                En[det] = En[det]/100.;
+                //En[det] = int(100*(En[det]*cal.m[det] + cal.b[det]));
+                //En[det] = En[det]/100.;
+                En[det] = (En[det]*cal.m[det] + cal.b[det]);
                 //fill histos
                 hEn[det]->Fill(En[det]);
                 hCycleTime->Fill(cycle_time);

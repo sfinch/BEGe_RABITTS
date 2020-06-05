@@ -79,7 +79,7 @@ void plot_nmon(int run_num){
                 hCycFC[i]->Fill(rabbit.cycle_time);
             }
         }
-        for (int i=0; i<RabVar::num_FC; i++){
+        for (int i=0; i<RabVar::num_BEGe; i++){
             if (rabbit.En[i] > RabVar::min_BEGe_E[i]){
                 hHPGe[i]->Fill(rabbit.cycle_time);
             }

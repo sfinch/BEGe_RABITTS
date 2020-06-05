@@ -12,6 +12,12 @@
 
 namespace HistVar{
     
+    //Energy spectra ranges (for plots)
+    const int start_E = 0; //in keV
+    const int end_E = 4000; //in keV
+    const double binsperkev = 0.10; 
+    const int num_E_bins = (end_E-start_E)/(binsperkev);
+    
     //Cycle time ranges (for plots)
     const double min_cycle_time = -1;
     const double max_cycle_time = 89;

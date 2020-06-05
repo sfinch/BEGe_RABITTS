@@ -77,8 +77,13 @@ class correction{
     double calc_DCcyclic(double l);
 
     void calc_cyclic(double l);
-    void calc_cyclic(double l, double l2);
-    void calc_cyclic(double l, double l2, double l3);
+    void calc_cyclic_chain2(double l1, double l2, 
+                            double y1=1, double y2=1);
+    void calc_cyclic_chain3(double l1, double l2, double l3, 
+                            double y1=1, double y2=1, double y3=1);
+
+    void calc_cyclic_indep2(double l1, double l2, 
+                            double y1=1, double y2=1);
     
     void write_scalers(char* filename);
     void plot_hist();
@@ -191,11 +196,11 @@ void correction::calc_cyclic(double l){
 
 }
 
-void correction::calc_cyclic(double l, double l2){
+void correction::calc_cyclic_chain2(double l1, double l2, double y1=1, double y2=1){
 
     calc_DCcyclic(l2);
 
-    lambda = l;
+    lambda = l1;
     lambda2 = l2;
 
     vec_act.resize(0);
@@ -209,9 +214,10 @@ void correction::calc_cyclic(double l, double l2){
 
     for (int i=0; i<scalers.size(); i++){
         activity = activity*(exp(-1.*lambda*dt))
-                 + scalers.at(i)*(1-exp(-1*lambda*dt));
+                 + scalers.at(i)*y1*(1-exp(-1*lambda*dt));
         activity2 = activity2*(exp(-1.*lambda2*dt))
-                 + activity*(1-exp(-1.*lambda*dt));
+                 + activity*(1-exp(-1.*lambda2*dt))
+                 + scalers.at(i)*y2*(1-exp(-1*lambda*dt));
 
         beam_avg += scalers.at(i);
 
@@ -234,9 +240,10 @@ void correction::calc_cyclic(double l, double l2){
 
     for (int i=0; i<scalers_irr.size(); i++){
         activity_irr = activity_irr*(exp(-1.*lambda*dt))
-                 + scalers_irr.at(i)*(1-exp(-1*lambda*dt));
+                 + scalers_irr.at(i)*y1*(1-exp(-1*lambda*dt));
 
         activity2_irr = activity2_irr*(exp(-1.*lambda2*dt))
+                 + scalers_irr.at(i)*y2*(1-exp(-1*lambda2*dt));
                  + activity_irr*(1-exp(-1.*lambda*dt));
 
         beam_avg_irr += scalers_irr.at(i);
@@ -254,11 +261,77 @@ void correction::calc_cyclic(double l, double l2){
 
 }
 
-void correction::calc_cyclic(double l, double l2, double l3){
+void correction::calc_cyclic_indep2(double l1, double l2, double y1=1, double y2=1){
+
+    calc_DCcyclic(l2);
+
+    lambda = l1;
+    lambda2 = l2;
+
+    vec_act.resize(0);
+    vec_counts.resize(0);
+
+    int num_beam_events = 0;
+    activity = 0;
+    activity2 = 0;
+    beam_avg = 0;
+    counts = 0;
+
+    for (int i=0; i<scalers.size(); i++){
+        activity = activity*(exp(-1.*lambda*dt))
+                 + scalers.at(i)*y1*(1-exp(-1*lambda*dt));
+        activity2 = activity2*(exp(-1.*lambda2*dt))
+                 + scalers.at(i)*y2*(1-exp(-1*lambda2*dt));
+
+        beam_avg += scalers.at(i);
+
+        counts += counting.at(i)*activity*(1-exp(-1*lambda*dt))/lambda
+                + counting.at(i)*activity2*(1-exp(-1*lambda2*dt))/lambda2;
+
+        if (irradiation.at(i)){
+            num_beam_events++;
+        }
+
+        vec_act.push_back(activity+activity2);
+        vec_counts.push_back(counts);
+    }
+    beam_avg = beam_avg/num_beam_events;
+
+    num_beam_events = 0;
+    activity_irr = 0;
+    activity2_irr = 0;
+    beam_avg_irr = 0;
+    counts_irr = 0; 
+
+    for (int i=0; i<scalers_irr.size(); i++){
+        activity_irr = activity_irr*(exp(-1.*lambda*dt))
+                 + scalers_irr.at(i)*y1*(1-exp(-1*lambda*dt));
+
+        activity2_irr = activity2_irr*(exp(-1.*lambda2*dt))
+                 + scalers_irr.at(i)*y2*(1-exp(-1*lambda2*dt));
+
+        beam_avg_irr += scalers_irr.at(i);
+
+        counts_irr += counting.at(i)*activity_irr*(1-exp(-1*lambda*dt))/lambda;
+                    + counting.at(i)*activity2_irr*(1-exp(-1*lambda2*dt))/lambda2;
+        
+        if (irradiation.at(i)){
+            num_beam_events++;
+        }
+    }
+    beam_avg_irr = beam_avg_irr/num_beam_events;
+
+    counts = counts/beam_avg;
+    counts_irr = counts_irr/beam_avg_irr;
+
+}
+
+
+void correction::calc_cyclic_chain3(double l1, double l2, double l3, double y1=1, double y2=1, double y3=1){
 
     calc_DCcyclic(l3);
 
-    lambda = l;
+    lambda = l1;
     lambda2 = l2;
     lambda3 = l3;
 
@@ -273,10 +346,12 @@ void correction::calc_cyclic(double l, double l2, double l3){
     vec_counts.resize(0);
     for (int i=0; i<scalers.size(); i++){
         activity = activity*(exp(-1.*lambda*dt))
-                 + scalers.at(i)*(1-exp(-1*lambda*dt));
+                 + scalers.at(i)*y1*(1-exp(-1*lambda*dt));
         activity2 = activity2*(exp(-1.*lambda2*dt))
+                 + scalers.at(i)*y2*(1-exp(-1*lambda2*dt))
                  + activity*(1-exp(-1.*lambda*dt));
         activity3 = activity3*(exp(-1.*lambda3*dt))
+                 + scalers.at(i)*y3*(1-exp(-1*lambda3*dt))
                  + activity2*(1-exp(-1.*lambda2*dt));
 
         beam_avg += scalers.at(i);
@@ -329,21 +404,49 @@ void correction::resize(int length){
 
 void correction::plot_hist()
 {
+    TH1F *hFlux = new TH1F("hFlux", "Beam flux", scalers.size(), 0, scalers.size()*dt);
     TH1F *hAct = new TH1F("hAct", "Target activity", scalers.size(), 0, scalers.size()*dt);
     TH1F *hCounts = new TH1F("hCounts", "Decays in detector", scalers.size(), 0, scalers.size()*dt);
     TH1F *hCounting = new TH1F("hCounting", "hCounting", scalers.size(), 0, scalers.size()*dt);
     TH1F *hIrr = new TH1F("hIrr", "hIrr", scalers.size(), 0, scalers.size()*dt);
 
     for (int i=0; i<scalers.size(); i++){
+        hFlux->SetBinContent(i, scalers.at(i)/dt);
         hAct->SetBinContent(i, vec_act.at(i)/beam_avg);
         hCounts->SetBinContent(i, vec_counts.at(i)/beam_avg);
         hCounting->SetBinContent(i, counting.at(i)*vec_act.at(i)/beam_avg);
         hIrr->SetBinContent(i, irradiation.at(i)*vec_act.at(i)/beam_avg);
     }
     TCanvas *c1 = new TCanvas("c1", "c1", 800, 800);
-    c1->Divide(1,2);
+    c1->Divide(1,3);
+    for (int j=0; j<3; j++){
+        c1->cd(j+1);
+        gPad->SetLeftMargin(0.20);
+        gPad->SetRightMargin(0.02);
+        gPad->SetBottomMargin(0.20);
+        gPad->SetTopMargin(0.05);
+    }
 
     c1->cd(1);
+    hFlux->SetLineWidth(2);
+    hFlux->SetTitle("");
+    hFlux->GetXaxis()->SetTitleSize(0.09);
+    hFlux->GetYaxis()->SetTitleSize(0.09);
+    hFlux->GetXaxis()->SetLabelSize(0.07);
+    hFlux->GetYaxis()->SetLabelSize(0.07);
+    hFlux->GetYaxis()->CenterTitle();
+    hFlux->GetYaxis()->SetTitle("Beam flux (Hz)");
+    hFlux->GetXaxis()->SetTitle("Time (s)");
+    hFlux->Draw();
+
+    c1->cd(2);
+    hAct->SetTitle("");
+    hAct->GetXaxis()->SetTitle("Time (s)");
+    hAct->GetXaxis()->SetTitleSize(0.09);
+    hAct->GetYaxis()->SetTitleSize(0.09);
+    hAct->GetXaxis()->SetLabelSize(0.07);
+    hAct->GetYaxis()->SetLabelSize(0.07);
+    hAct->GetYaxis()->SetTitle("Target activity (Bq)");
     hAct->GetXaxis()->SetTitle("Time (s)");
     hAct->SetLineWidth(2);
     hAct->Draw();
@@ -354,8 +457,15 @@ void correction::plot_hist()
     hIrr->SetFillColor(2);
     hIrr->Draw("same");
 
-    c1->cd(2);
+    c1->cd(3);
+    hCounts->SetTitle("");
     hCounts->SetLineWidth(2);
+    hCounts->GetXaxis()->SetTitleSize(0.09);
+    hCounts->GetYaxis()->SetTitleSize(0.09);
+    hCounts->GetXaxis()->SetLabelSize(0.07);
+    hCounts->GetYaxis()->SetLabelSize(0.07);
+    hCounts->GetYaxis()->SetTitle("#splitline{HPGe detector}{(cumulative counts)}");
+    hCounts->GetYaxis()->CenterTitle();
     hCounts->Draw();
     hCounts->GetXaxis()->SetTitle("Time (s)");
 
@@ -410,7 +520,7 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     //Variables
     double half_life = 10;
     double lambda = 0.69314718/half_life;
-    double dt = 0.01;
+    double dt = 0.1;
 
     if (run_num2 < run_num){
         run_num2 = run_num;
@@ -606,17 +716,23 @@ void cyclic_corr(int run_num, int run_num2 = 0){
 
     half_life = 5.0;
     lambda = 0.69314718/half_life;
-    double half_life2 = 10;
+    double half_life2 = 20;
     double lambda2 = 0.69314718/half_life2;
     
-    corr_BCI.calc_cyclic(lambda, lambda2);
-    corr_nmon.calc_cyclic(lambda, lambda2);
-    corr_nPSD.calc_cyclic(lambda, lambda2);
-    //corr_BCI.calc_cyclic(lambda2);
-    //corr_nmon.calc_cyclic(lambda2);
-    //corr_nPSD.calc_cyclic(lambda2);
+    //corr_BCI.calc_cyclic(lambda);
+    //corr_nmon.calc_cyclic(lambda);
+    //corr_nPSD.calc_cyclic(lambda);
 
-    corr_BCI.plot_hist();
+    corr_BCI.calc_cyclic_chain2(lambda, lambda2, 1, 0);
+    corr_nmon.calc_cyclic_chain2(lambda, lambda2, 1, 0);
+    corr_nPSD.calc_cyclic_chain2(lambda, lambda2, 1, 0);
+
+    //corr_BCI.calc_cyclic_indep2(lambda, lambda2, 1, 1);
+    //corr_nmon.calc_cyclic_indep2(lambda, lambda2, 1, 1);
+    //corr_nPSD.calc_cyclic_indep2(lambda, lambda2, 1, 1);
+
+    //corr_BCI.plot_hist();
+    corr_nPSD.plot_hist();
 
     //print corrections
     cout << "------------------------------------------------------" << endl;

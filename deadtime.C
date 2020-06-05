@@ -51,16 +51,16 @@ struct DT{
 DT::DT(TString n){
     name = n;
     hTS = new TH1F(Form("hTS%s", name.Data()), Form("hTS%s", name.Data()), 
-         3000000/rebin, 0, 3000000);
+         9000/rebin, 0, 9000);
     fExpo = new TF1(Form("fExpo%s", name.Data()), "exp([0]+[1]*x)",
-         0, 3000000);
+         0, 10000);
     fExpo->SetParameter(0, 5);
     fExpo->SetParameter(1, -1e-5);
 };
 
 void DT::calc(){
     if (num_events>0){
-        hTS->GetXaxis()->SetRangeUser(1000, 3000000);
+        hTS->GetXaxis()->SetRangeUser(1000, 9000);
         hTS->Fit(Form("fExpo%s", name.Data()));
         exp_int = fExpo->Eval(0)*(-1.)/(rebin*1.*fExpo->GetParameter(1));
 
@@ -90,7 +90,7 @@ void deadtime(int run_num){
     gStyle->SetOptStat(0);
 
     //Variables
-    double elapsed_time;
+    double elapsed_time = 0;
     double time_win[RabVar::num_win][2];
     for (int i=0; i<RabVar::num_win; i++){
         time_win[i][0] = (RabVar::time_bin*i)+RabVar::time_count[0];
@@ -124,6 +124,9 @@ void deadtime(int run_num){
         nb = rabbit.GetEntry(jentry);   nbytes += nb;
         if (jentry%100000==0){
             cout << '\r' << "Processing event " << jentry;
+        }
+        if (rabbit.seconds>elapsed_time){
+            elapsed_time = rabbit.seconds;
         }
 
         for (int chn=0; chn<16; chn++){
@@ -168,8 +171,6 @@ void deadtime(int run_num){
         }
     }
     cout << endl;
-    nb = rabbit.GetEntry(nentries-1);
-    elapsed_time = rabbit.seconds;
 
     //loop over QDC data
     /*
@@ -260,6 +261,7 @@ void deadtime(int run_num){
     cout << "-------------------------------------------------------------" << endl;
     cout << "Run start:    " << rabbit.rawfile->Get("start_time")->GetTitle() << endl;
     cout << "Run stop:     " << rabbit.rawfile->Get("stop_time")->GetTitle() << endl;
+    cout.precision(5);
     cout << "Elapsed time: " << elapsed_time << " s" << endl;
     cout << "-------------------------------------------------------------" << endl;
     

@@ -21,6 +21,7 @@ using std::endl;
 
 #include "include/processed.hh"
 #include "include/RabVar.hh"
+#include "include/HistVar.hh"
 #include "src/hist2TKA.C"
 
 
@@ -43,15 +44,19 @@ void analysis_overnight(int run_num){
 
     for (int i=0; i<num_overnight_win; i++){
         for (int j=0; j<RabVar::num_BEGe; j++){
-            hEnWin[i][j] = new TH1F(Form("run%i_Hour%i_Det%i", run_num, (i+1), j), Form("hEnWin%i%i", i, j), 30000, 0, 3000);
+            hEnWin[i][j] = new TH1F(Form("run%i_Hour%i_Det%i", run_num, (i+1), j), Form("hEnWin%i%i", i, j), 
+                                    HistVar::num_E_bins, HistVar::start_E, HistVar::end_E);
         }
-        hEnWin[i][RabVar::num_BEGe] = new TH1F(Form("run%i_Hour%i_BothDet", run_num, i+1), Form("hEnWin%iBoth", i), 30000, 0, 3000);
+        hEnWin[i][RabVar::num_BEGe] = new TH1F(Form("run%i_Hour%i_BothDet", run_num, i+1), Form("hEnWin%iBoth", i), 
+                                    HistVar::num_E_bins, HistVar::start_E, HistVar::end_E);
     }
 
     for (int i=0; i<RabVar::num_BEGe; i++){
-        hEnAll[i] = new TH1F(Form("run%i_All_Det%i", run_num, i), Form("hEnAll%i", i), 30000, 0, 3000);
+        hEnAll[i] = new TH1F(Form("run%i_All_Det%i", run_num, i), Form("hEnAll%i", i), 
+                                    HistVar::num_E_bins, HistVar::start_E, HistVar::end_E);
     }
-    hEnAll[RabVar::num_BEGe] = new TH1F(Form("run%i_All_BothDet", run_num), Form("hEnAll%i", RabVar::num_BEGe), 30000, 0, 3000);
+    hEnAll[RabVar::num_BEGe] = new TH1F(Form("run%i_All_BothDet", run_num), Form("hEnAll%i", RabVar::num_BEGe), 
+                                    HistVar::num_E_bins, HistVar::start_E, HistVar::end_E);
 
     //cuts
     double time_win[num_overnight_win][2];
@@ -129,16 +134,19 @@ void analysis_overnight(int run_num){
     fHist->cd();
 
     for (int det=0; det<RabVar::num_BEGe+1; det++){
+        hEnAll[det]->Rebin(RabVar::energy_rebin);
         hEnAll[det]->Write();
         hist2TKA(hEnAll[det]);
     }
     for (int i=0; i<cycles_complete; i++){
         for (int j=0; j<RabVar::num_BEGe+1; j++){
+            hEnWin[i][j]->Rebin(RabVar::energy_rebin);
             hEnWin[i][j]->Write();
             hist2TKA(hEnWin[i][j]);
         }
     }
     for (int j=0; j<RabVar::num_BEGe+1; j++){
+        hEnWin[cycles_complete][j]->Rebin(RabVar::energy_rebin);
         hEnWin[cycles_complete][j]->SetName(Form("run%i_Part%i_Det%i", run_num, (cycles_complete+1), j+1));
         hEnWin[cycles_complete][j]->Write();
         hist2TKA(hEnWin[cycles_complete][j]);
