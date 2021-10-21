@@ -216,8 +216,8 @@ void correction::calc_cyclic_chain2(double l1, double l2, double y1=1, double y2
         activity = activity*(exp(-1.*lambda*dt))
                  + scalers.at(i)*y1*(1-exp(-1*lambda*dt));
         activity2 = activity2*(exp(-1.*lambda2*dt))
-                 + activity*(1-exp(-1.*lambda2*dt))
-                 + scalers.at(i)*y2*(1-exp(-1*lambda*dt));
+                 + activity*(1-exp(-1.*lambda*dt))
+                 + scalers.at(i)*y2*(1-exp(-1*lambda2*dt));
 
         beam_avg += scalers.at(i);
 
@@ -396,6 +396,7 @@ void correction::calc_cyclic_chain3(double l1, double l2, double l3, double y1=1
 }
 
 void correction::resize(int length){
+    //resize all vectors
     scalers.resize(length, 0);
     scalers_irr.resize(length, 0);
     counting.resize(length, 0);
@@ -404,6 +405,7 @@ void correction::resize(int length){
 
 void correction::plot_hist()
 {
+    //make a fancy plot of the flux/activity/counts
     TH1F *hFlux = new TH1F("hFlux", "Beam flux", scalers.size(), 0, scalers.size()*dt);
     TH1F *hAct = new TH1F("hAct", "Target activity", scalers.size(), 0, scalers.size()*dt);
     TH1F *hCounts = new TH1F("hCounts", "Decays in detector", scalers.size(), 0, scalers.size()*dt);
@@ -474,10 +476,12 @@ void correction::plot_hist()
 void correction::write_scalers(char* filename){
     //output scalers to file
     FILE *file_ptr = fopen(filename, "w");
+    fprintf(file_ptr, "%f\n", dt);
     for (int i=0; i<scalers.size(); i++){
-        fprintf(file_ptr, "%i\t", i);
+        //fprintf(file_ptr, "%i\t", i);
         fprintf(file_ptr, "%f\t", i*dt);
         fprintf(file_ptr, "%i\t", scalers.at(i));
+        fprintf(file_ptr, "%i\n", scalers_irr.at(i));
     }
     fclose(file_ptr);
 }
@@ -512,7 +516,10 @@ void correction::print_cyclic(){
          << "\t\t" << counts_irr/DCcyclic_corr << endl;
 }
 
-void cyclic_corr(int run_num, int run_num2 = 0){
+void cyclic_corr(int run_num, int run_num2 = 0, char opt = 'c'){
+    //opt = 'r' (read): read in scalers from file in datafiles/scalers/
+    //only works if the same configuration has previously been run
+    //else, opt = 'c' (create): create scalers
 
     gROOT->SetStyle("Plain");
     gStyle->SetOptStat(0);
@@ -520,12 +527,31 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     //Variables
     double half_life = 10;
     double lambda = 0.69314718/half_life;
-    double dt = 0.1;
+    double dt = 0.01;
 
     if (run_num2 < run_num){
         run_num2 = run_num;
     }
     const int num_runs = run_num2 - run_num + 1;
+
+    ifstream inBCI, innmon, innPSD;
+    if (opt=='r'){
+        //read in dt from scaler files
+        if (num_runs == 1){
+            inBCI.open(Form("datafiles/scalers/run%i_BCI.scalers", run_num));
+            innmon.open(Form("datafiles/scalers/run%i_nmon.scalers", run_num));
+            innPSD.open(Form("datafiles/scalers/run%i_nPSD.scalers", run_num));
+        }
+        else{
+            inBCI.open(Form("datafiles/scalers/runs%i-%i_BCI.scalers", run_num, run_num2));
+            innmon.open(Form("datafiles/scalers/runs%i-%i_nmon.scalers", run_num, run_num2));
+            innPSD.open(Form("datafiles/scalers/runs%i-%i_nPSD.scalers", run_num, run_num2));
+        }
+
+        inBCI >> dt;
+        innmon >> dt;
+        innPSD >> dt;
+    }
 
     double elapsed_time[num_runs];
     double SCP_time[num_runs];
@@ -578,6 +604,34 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     corr_nmon.total_cycles = total_cycles;
     corr_nPSD.total_cycles = total_cycles;
 
+    if (opt=='r'){
+        //read in scalers from file
+        
+        double time_step, counts, counts_irr;
+
+        for (int lineno=0; lineno<numTbins; lineno++){
+            inBCI >> time_step >> counts >> counts_irr; 
+            corr_BCI.scalers.at(lineno) = counts;
+            corr_BCI.scalers_irr.at(lineno) = counts_irr;
+
+        }
+        for (int lineno=0; lineno<numTbins; lineno++){
+            innmon>> time_step >> counts >> counts_irr; 
+            corr_nmon.scalers.at(lineno) = counts;
+            corr_nmon.scalers_irr.at(lineno) = counts_irr;
+        }
+        for (int lineno=0; lineno<numTbins; lineno++){
+            innPSD>> time_step >> counts >> counts_irr; 
+            corr_nPSD.scalers.at(lineno) = counts;
+            corr_nPSD.scalers_irr.at(lineno) = counts_irr;
+        }
+        maxT = time_step;
+
+        inBCI.close();
+        innmon.close();
+        innPSD.close();
+    }//end read in scalers
+
     //loop over runs
     for (int run=0; run<num_runs; run++){
         cout << "------------------------------------------------------" << endl;
@@ -590,83 +644,86 @@ void cyclic_corr(int run_num, int run_num2 = 0){
         
         startOffset = tStart[run].Convert() - tStart[0].Convert();
 
-        //loop over SCP data
-        cout << "Looping over SCP data..." << endl;
-        nentries = rabbit[run]->fChain->GetEntriesFast();
-        nbytes = 0, nb = 0;
-        nb = rabbit[run]->GetEntry(nentries-1);
-        SCP_time[run] = rabbit[run]->seconds;
-        
-        for (Long64_t jentry=0; jentry<nentries; jentry++) {
-            nb = rabbit[run]->GetEntry(jentry);   nbytes += nb;
-            if (jentry%100000==0){
-                cout << '\r' << "Processing event " << jentry;
-            }
-            if (rabbit[run]->seconds > SCP_time[run]){
-                SCP_time[run] = rabbit[run]->seconds;
-            }
-
-            if (rabbit[run]->ADC[RabVar::BCI_chn] > RabVar::min_BCI){
-        
-                corr_BCI.scalers.at(int((startOffset + rabbit[run]->seconds)/dt))++;
-
-                if ((rabbit[run]->cycle_time > RabVar::time_irr[0])
-                  &&(rabbit[run]->cycle_time < RabVar::time_irr[1])){
-
-                    corr_BCI.scalers_irr.at(int((startOffset + rabbit[run]->seconds)/dt))++;
+        if (opt=='c'){
+            //creat scalers
+            //loop over SCP data
+            cout << "Looping over SCP data..." << endl;
+            nentries = rabbit[run]->fChain->GetEntriesFast();
+            nbytes = 0, nb = 0;
+            nb = rabbit[run]->GetEntry(nentries-1);
+            SCP_time[run] = rabbit[run]->seconds;
+            
+            for (Long64_t jentry=0; jentry<nentries; jentry++) {
+                nb = rabbit[run]->GetEntry(jentry);   nbytes += nb;
+                if (jentry%100000==0){
+                    cout << '\r' << "Processing event " << jentry;
                 }
-            }
-        } //end loop over SCP
-        cout << '\r' << nentries << " total SCP events" << endl;
-        cout << SCP_time[run] << " s SCP time" << endl;
-
-        //loop over QDC data
-        cout << "Looping over QDC data..." << endl;
-        nentries = rabbit_QDC[run]->fChain->GetEntriesFast();
-        nbytes = 0, nb = 0;
-        nb = rabbit_QDC[run]->GetEntry(nentries-1);
-        QDC_time[run] = rabbit_QDC[run]->seconds;
-
-        for (Long64_t jentry=0; jentry<nentries; jentry++) {
-            nb = rabbit_QDC[run]->GetEntry(jentry);   nbytes += nb;
-            if (jentry%100000==0){
-                cout << '\r' << "Processing event " << jentry;
-            }
-            if (rabbit_QDC[run]->seconds > QDC_time[run]){
-                QDC_time[run] = rabbit_QDC[run]->seconds;
-            }
-            if (rabbit_QDC[run]->ADC_long[RabVar::nmon_chn] > RabVar::min_nmon_E){
-
-                corr_nmon.scalers.at(int((startOffset + rabbit_QDC[run]->seconds)/dt))++;
-
-                if ((rabbit_QDC[run]->nmon_PSD > RabVar::nmon_PSD_cut[0])
-                  && (rabbit_QDC[run]->nmon_PSD < RabVar::nmon_PSD_cut[1])){
-
-                    corr_nPSD.scalers.at(int((startOffset + rabbit_QDC[run]->seconds)/dt))++;
-
+                if (rabbit[run]->seconds > SCP_time[run]){
+                    SCP_time[run] = rabbit[run]->seconds;
                 }
-                if ((rabbit_QDC[run]->cycle_time > RabVar::time_irr[0])
-                  &&(rabbit_QDC[run]->cycle_time < RabVar::time_irr[1])){
 
-                    corr_nmon.scalers_irr.at(int((startOffset + rabbit_QDC[run]->seconds)/dt))++;
+                if (rabbit[run]->ADC[RabVar::BCI_chn] > RabVar::min_BCI){
+            
+                    corr_BCI.scalers.at(int((startOffset + rabbit[run]->seconds)/dt))++;
+
+                    if ((rabbit[run]->cycle_time > RabVar::time_irr[0])
+                      &&(rabbit[run]->cycle_time < RabVar::time_irr[1])){
+
+                        corr_BCI.scalers_irr.at(int((startOffset + rabbit[run]->seconds)/dt))++;
+                    }
+                }
+            } //end loop over SCP
+            cout << '\r' << nentries << " total SCP events" << endl;
+            cout << SCP_time[run] << " s SCP time" << endl;
+
+            //loop over QDC data
+            cout << "Looping over QDC data..." << endl;
+            nentries = rabbit_QDC[run]->fChain->GetEntriesFast();
+            nbytes = 0, nb = 0;
+            nb = rabbit_QDC[run]->GetEntry(nentries-1);
+            QDC_time[run] = rabbit_QDC[run]->seconds;
+
+            for (Long64_t jentry=0; jentry<nentries; jentry++) {
+                nb = rabbit_QDC[run]->GetEntry(jentry);   nbytes += nb;
+                if (jentry%100000==0){
+                    cout << '\r' << "Processing event " << jentry;
+                }
+                if (rabbit_QDC[run]->seconds > QDC_time[run]){
+                    QDC_time[run] = rabbit_QDC[run]->seconds;
+                }
+                if (rabbit_QDC[run]->ADC_long[RabVar::nmon_chn] > RabVar::min_nmon_E){
+
+                    corr_nmon.scalers.at(int((startOffset + rabbit_QDC[run]->seconds)/dt))++;
 
                     if ((rabbit_QDC[run]->nmon_PSD > RabVar::nmon_PSD_cut[0])
                       && (rabbit_QDC[run]->nmon_PSD < RabVar::nmon_PSD_cut[1])){
 
-                        corr_nPSD.scalers_irr.at(int((startOffset + rabbit_QDC[run]->seconds)/dt))++;
+                        corr_nPSD.scalers.at(int((startOffset + rabbit_QDC[run]->seconds)/dt))++;
 
                     }
-                }
-            }
+                    if ((rabbit_QDC[run]->cycle_time > RabVar::time_irr[0])
+                      &&(rabbit_QDC[run]->cycle_time < RabVar::time_irr[1])){
 
-        } //end loop over QDC
-        cout << '\r' << nentries << " total QDC events" << endl;
-        cout << QDC_time[run] << " s QDC time" << endl;
+                        corr_nmon.scalers_irr.at(int((startOffset + rabbit_QDC[run]->seconds)/dt))++;
+
+                        if ((rabbit_QDC[run]->nmon_PSD > RabVar::nmon_PSD_cut[0])
+                          && (rabbit_QDC[run]->nmon_PSD < RabVar::nmon_PSD_cut[1])){
+
+                            corr_nPSD.scalers_irr.at(int((startOffset + rabbit_QDC[run]->seconds)/dt))++;
+
+                        }
+                    }
+                }
+
+            } //end loop over QDC
+            cout << '\r' << nentries << " total QDC events" << endl;
+            cout << QDC_time[run] << " s QDC time" << endl;
         
-        maxT = SCP_time[run];
-        if (QDC_time[run] > maxT){
-            maxT = QDC_time[run];
-        }
+            maxT = SCP_time[run];
+            if (QDC_time[run] > maxT){
+                maxT = QDC_time[run];
+            }
+        }//end create scalers
 
         irr_start.resize(0);
         for (int ncycle=0; ncycle<rabbit[run]->irr_start_times->GetNoElements(); ncycle++){
@@ -695,37 +752,40 @@ void cyclic_corr(int run_num, int run_num2 = 0){
 
     } //end loop over runs
 
-    if (num_runs == 1){
-        corr_BCI.write_scalers(Form("datafiles/run%i.scalers", run_num));
-        corr_nmon.write_scalers(Form("datafiles/run%i.scalers", run_num));
-        corr_nPSD.write_scalers(Form("datafiles/run%i.scalers", run_num));
-    }
-    else{
-        corr_BCI.write_scalers(Form("datafiles/runs%i-%i.scalers", run_num, run_num2));
-        corr_nmon.write_scalers(Form("datafiles/runs%i-%i.scalers", run_num, run_num2));
-        corr_nPSD.write_scalers(Form("datafiles/runs%i-%i.scalers", run_num, run_num2));
+    if (opt=='c'){
+        //write scalers to file if they have been created
+        if (num_runs == 1){
+            corr_BCI.write_scalers(Form("datafiles/scalers/run%i_BCI.scalers", run_num));
+            corr_nmon.write_scalers(Form("datafiles/scalers/run%i_nmon.scalers", run_num));
+            corr_nPSD.write_scalers(Form("datafiles/scalers/run%i_nPSD.scalers", run_num));
+        }
+        else{
+            corr_BCI.write_scalers(Form("datafiles/scalers/runs%i-%i_BCI.scalers", run_num, run_num2));
+            corr_nmon.write_scalers(Form("datafiles/scalers/runs%i-%i_nmon.scalers", run_num, run_num2));
+            corr_nPSD.write_scalers(Form("datafiles/scalers/runs%i-%i_nPSD.scalers", run_num, run_num2));
+        }
     }
 
     //calculate corrections
-    half_life = 2.66*3600;
+    half_life = 10.53*24*3600;
     lambda = 0.69314718/half_life;
 
     corr_BCI.calc_activation(lambda);
     corr_nmon.calc_activation(lambda);
     corr_nPSD.calc_activation(lambda);
 
-    half_life = 5.0;
+    half_life = 7.1;
     lambda = 0.69314718/half_life;
-    double half_life2 = 20;
+    double half_life2 = 1.5;
     double lambda2 = 0.69314718/half_life2;
     
-    //corr_BCI.calc_cyclic(lambda);
-    //corr_nmon.calc_cyclic(lambda);
-    //corr_nPSD.calc_cyclic(lambda);
+    corr_BCI.calc_cyclic(lambda);
+    corr_nmon.calc_cyclic(lambda);
+    corr_nPSD.calc_cyclic(lambda);
 
-    corr_BCI.calc_cyclic_chain2(lambda, lambda2, 1, 0);
-    corr_nmon.calc_cyclic_chain2(lambda, lambda2, 1, 0);
-    corr_nPSD.calc_cyclic_chain2(lambda, lambda2, 1, 0);
+    //corr_BCI.calc_cyclic_chain2(lambda, lambda2, 0, 0);
+    //corr_nmon.calc_cyclic_chain2(lambda, lambda2, 0, 0);
+    //corr_nPSD.calc_cyclic_chain2(lambda, lambda2, 1, 1);
 
     //corr_BCI.calc_cyclic_indep2(lambda, lambda2, 1, 1);
     //corr_nmon.calc_cyclic_indep2(lambda, lambda2, 1, 1);
@@ -749,5 +809,5 @@ void cyclic_corr(int run_num, int run_num2 = 0){
     cout << "------------- n-mon with PSD cut -------------"  << endl;
     corr_nPSD.print();
 
-
 }
+
