@@ -151,7 +151,9 @@ int process_rabbit(int run_num, bool opt_verbose){
     
     //find start offset
     if (!(source_run)){
-        for (Long64_t jentry=0; jentry<nentries;jentry++) { rabbit.GetEntry(jentry);
+        for (Long64_t jentry=0; jentry<nentries;jentry++) { 
+        //for (Long64_t jentry=104000; jentry<nentries;jentry++) { 
+            rabbit.GetEntry(jentry);
             if (rabbit.ADC[RabVar::rabbit_chn]>10){
                 start_offset = rabbit.seconds; 
                 start_event = jentry-1; 
@@ -160,6 +162,7 @@ int process_rabbit(int run_num, bool opt_verbose){
         }
     }
     cout << start_offset << " seconds data before RABITT turned on." << endl;
+    cout << start_event << " Entry # RABITT turned on." << endl;
 
     //Find ending offset
     end_event = nentries;
@@ -204,6 +207,7 @@ int process_rabbit(int run_num, bool opt_verbose){
             }
             else{//rabbit has moved
                 if ((rabbit.ADC[RabVar::rabbit_chn]>10)||(rabbit.TDC[RabVar::rabbit_chn]>10)){
+                    //cout << endl << jentry << endl;
                     //rabbit currently moving
                     if ((rabbit.seconds-last_move)>RabVar::min_time){ //min time filter
 

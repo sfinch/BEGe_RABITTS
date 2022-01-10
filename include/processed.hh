@@ -74,9 +74,24 @@ processed::processed(int run_num)
       fChain->AddFriend("MDPP16_SCP", Form("data_root/RABITTS_0%i.root", run_num));
       rawfile = new TFile(Form("data_root/RABITTS_0%i.root", run_num));
    }
-   else{
+   else if (run_num<1000){
       fChain->AddFriend("MDPP16_SCP", Form("data_root/RABITTS_%i.root", run_num));
       rawfile = new TFile(Form("data_root/RABITTS_%i.root", run_num));
+   }
+   else if (run_num<1010){
+      run_num = run_num-1000;
+      fChain->AddFriend("MDPP16_SCP", Form("data_root/RABITTS2_00%i.root", run_num));
+      rawfile = new TFile(Form("data_root/RABITTS2_00%i.root", run_num));
+   }
+   else if (run_num<1100){
+      run_num = run_num-1000;
+      fChain->AddFriend("MDPP16_SCP", Form("data_root/RABITTS2_0%i.root", run_num));
+      rawfile = new TFile(Form("data_root/RABITTS2_0%i.root", run_num));
+   }
+   else{
+      run_num = run_num-1000;
+      fChain->AddFriend("MDPP16_SCP", Form("data_root/RABITTS2_%i.root", run_num));
+      rawfile = new TFile(Form("data_root/RABITTS2_%i.root", run_num));
    }
 
    irr_start_times = (TVectorT<double> *)file->Get("irr_start_times");

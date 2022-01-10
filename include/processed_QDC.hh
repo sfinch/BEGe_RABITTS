@@ -69,9 +69,24 @@ processed_QDC::processed_QDC(int run_num)
       fChain->AddFriend("MDPP16_QDC", Form("data_root/RABITTS_0%i.root", run_num));
       rawfile = new TFile(Form("data_root/RABITTS_0%i.root", run_num));
    }
-   else{
+   else if (run_num<1000){
       fChain->AddFriend("MDPP16_QDC", Form("data_root/RABITTS_%i.root", run_num));
       rawfile = new TFile(Form("data_root/RABITTS_%i.root", run_num));
+   }
+   else if (run_num<1010){
+      run_num = run_num-1000;
+      fChain->AddFriend("MDPP16_QDC", Form("data_root/RABITTS2_00%i.root", run_num));
+      rawfile = new TFile(Form("data_root/RABITTS2_00%i.root", run_num));
+   }
+   else if (run_num<1100){
+      run_num = run_num-1000;
+      fChain->AddFriend("MDPP16_QDC", Form("data_root/RABITTS2_0%i.root", run_num));
+      rawfile = new TFile(Form("data_root/RABITTS2_0%i.root", run_num));
+   }
+   else{
+      run_num = run_num-1000;
+      fChain->AddFriend("MDPP16_QDC", Form("data_root/RABITTS2_%i.root", run_num));
+      rawfile = new TFile(Form("data_root/RABITTS2_%i.root", run_num));
    }
 
    Init();

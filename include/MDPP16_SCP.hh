@@ -61,8 +61,20 @@ MDPP16_SCP::MDPP16_SCP(int run_num)
     else if (run_num<100){
         file = new TFile(Form("data_root/RABITTS_0%i.root", run_num));
     }
-    else{
+    else if (run_num<1000){
         file = new TFile(Form("data_root/RABITTS_%i.root", run_num));
+    }
+    else if (run_num<1010){
+        run_num = run_num-1000;
+        file = new TFile(Form("data_root/RABITTS2_00%i.root", run_num));
+    }
+    else if (run_num<1100){
+        run_num = run_num-1000;
+        file = new TFile(Form("data_root/RABITTS2_0%i.root", run_num));
+    }
+    else{
+        run_num = run_num-1000;
+        file = new TFile(Form("data_root/RABITTS2_%i.root", run_num));
     }
     file->GetObject("MDPP16_SCP",fChain);
     m = (TVectorT<double> *)file->Get("m[16]");
